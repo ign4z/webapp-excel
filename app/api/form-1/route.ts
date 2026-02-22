@@ -1,111 +1,100 @@
-// app/api/form-1/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getConfigParams, calculatePrice, generateSessionToken } from '@/lib/calculations';
-import { sendForm1Email } from '@/lib/email';
-import { Form1Data } from '@/types';
+import { z } from 'zod';
+import crypto from 'crypto';
+import { getValuationConfig } from '@/lib/config';
 
-/**
- * POST /api/form-1
- * 
- * Flusso:
- * 1. Verifica reCAPTCHA
- * 2. Carica config parametri
- * 3. Calcola prezzo
- * 4. Invia email
- * 5. Genera session token
- * 6. Ritorna risultato
- */
-export async function POST(request: NextRequest) {
+/* ==========================
+   SCHEMA
+========================== */
+const formSchema = z.object({
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(10),
+  city: z.string().min(1),
+  address: z.string().min(5),
+  squareMeters: z.number().min(10),
+  recaptchaToken: z.string(),
+});
+
+/* ==========================
+   CONFIG
+========================== */
+const ALLOWED_CITIES = [
+  'Milano',
+  'Monza',
+  'Sesto San Giovanni',
+  'Cinisello Balsamo',
+  'Locate di Triulzi',
+];
+
+/* ==========================
+   ROUTE
+========================== */
+export async function POST(req: NextRequest) {
   try {
-    const body: Form1Data = await request.json();
+    const body = await req.json();
+    const validated = formSchema.parse(body);
 
-    // === 1. VALIDAZIONE INPUT ===
-    if (!body.name || !body.email || !body.phone || !body.quantity) {
-      return NextResponse.json(
-        { success: false, error: 'Campi obbligatori mancanti' },
-        { status: 400 }
+    /* ─── reCAPTCHA ─── */
+    if (process.env.RECAPTCHA_SECRET_KEY) {
+      const recaptchaResponse = await fetch(
+        'https://www.google.com/recaptcha/api/siteverify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${validated.recaptchaToken}`,
+        }
       );
-    }
 
-    if (body.quantity <= 0) {
-      return NextResponse.json(
-        { success: false, error: 'La quantità deve essere maggiore di 0' },
-        { status: 400 }
-      );
-    }
+      const recaptchaData = await recaptchaResponse.json();
 
-    // === 2. VERIFICA reCAPTCHA ===
-    if (!body.recaptchaToken) {
-      return NextResponse.json(
-        { success: false, error: 'reCAPTCHA mancante' },
-        { status: 400 }
-      );
-    }
-
-    const recaptchaResponse = await fetch(
-      'https://www.google.com/recaptcha/api/siteverify',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${body.recaptchaToken}`,
+      if (!recaptchaData.success) {
+        return NextResponse.json(
+          { error: 'Verifica reCAPTCHA fallita' },
+          { status: 400 }
+        );
       }
+    }
+
+    /* ─── City whitelist (fast check prima del geocoding) ─── */
+    const cityAllowed = ALLOWED_CITIES.some(
+      (c) => c.toLowerCase() === validated.city.toLowerCase()
     );
 
-    const recaptchaData = await recaptchaResponse.json();
-
-    if (!recaptchaData.success || recaptchaData.score < 0.5) {
-      console.error('❌ reCAPTCHA fallito:', recaptchaData);
+    if (!cityAllowed) {
       return NextResponse.json(
-        { success: false, error: 'Verifica reCAPTCHA fallita' },
+        {
+          error:
+            'Servizio disponibile solo nei comuni di Milano, Monza, Sesto San Giovanni, Cinisello Balsamo e Locate di Triulzi.',
+        },
         { status: 400 }
       );
     }
 
-    console.log('✅ reCAPTCHA verificato, score:', recaptchaData.score);
+    /* ─── Business logic ─── */
+    const config = await getValuationConfig();
+    const estimatedValue = validated.squareMeters * config.pricePerSqm;
 
-    // === 3. CARICA CONFIG E CALCOLA ===
-    const config = await getConfigParams();
-    const result = calculatePrice(body.quantity, config);
+    const result = {
+      pricePerSqm: config.pricePerSqm,
+      estimatedValue,
+      message: 'Valutazione preliminare calcolata',
+    };
 
-    console.log('📊 Calcolo:', {
-      quantity: body.quantity,
-      config,
-      result,
-    });
+    const sessionToken = crypto.randomBytes(32).toString('hex');
 
-    // === 4. INVIA EMAIL ===
-    const emailResult = await sendForm1Email(
-      body.email,
-      body.name,
-      result
-    );
+    return NextResponse.json({ result, sessionToken });
+  } catch (error: any) {
+    console.error('Error in /api/form-1:', error);
 
-    if (!emailResult.success) {
-      console.error('⚠️ Email non inviata, ma continuo:', emailResult.error);
-      // Non blocchiamo l'utente se l'email fallisce
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dati non validi', details: error.errors },
+        { status: 400 }
+      );
     }
 
-    // === 5. GENERA SESSION TOKEN ===
-    const sessionToken = generateSessionToken();
-
-    // === 6. RITORNA RISULTATO ===
-    return NextResponse.json({
-      success: true,
-      result: {
-        basePrice: result.basePrice,
-        finalPrice: result.finalPrice,
-        discount: result.discount,
-        message: result.message,
-      },
-      sessionToken,
-    });
-
-  } catch (error) {
-    console.error('❌ Errore API Form 1:', error);
-    return NextResponse.json(
-      { success: false, error: 'Errore interno del server' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Errore del server' }, { status: 500 });
   }
 }

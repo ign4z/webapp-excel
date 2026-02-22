@@ -29,7 +29,7 @@ export async function sendForm1Email(
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'WebApp <noreply@tuodominio.com>',
+      from: 'WebApp <onboarding@resend.dev>',
       to: email,
       subject: 'Il tuo preventivo è pronto!',
       html: `

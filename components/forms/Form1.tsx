@@ -1,237 +1,184 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import ReCAPTCHA from 'react-google-recaptcha';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
+import { Step1View, Step1FormValues } from '@/components/valuation/Step1View';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Il nome deve essere di almeno 2 caratteri'),
+  firstName: z.string().min(2, 'Il nome deve essere di almeno 2 caratteri'),
+  lastName: z.string().min(2, 'Il cognome deve essere di almeno 2 caratteri'),
   email: z.string().email('Inserisci un email valida'),
   phone: z.string().min(10, 'Inserisci un numero di telefono valido'),
-  quantity: z.number().min(1, 'La quantità deve essere almeno 1'),
+  city: z.string().min(1, 'Seleziona un comune'),
+  address: z.string().min(5, 'Inserisci un indirizzo valido'),
+  squareMeters: z.number().min(10, 'Minimo 10 mq'),
 });
 
-type FormValues = z.infer<typeof formSchema>;
-
-export default function Form1Component() {
+export default function Form1() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
 
-  const form = useForm<FormValues>({
+  const addressRef = useRef<HTMLInputElement | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const isFirstCityRender = useRef(true);
+
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<Step1FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       phone: '',
-      quantity: 1,
+      city: '',
+      address: '',
+      squareMeters: 80,
     },
   });
 
-  async function onSubmit(values: FormValues) {
-    if (!recaptchaToken) {
-      toast({
-        title: 'Errore',
-        description: 'Completa la verifica reCAPTCHA',
-        variant: 'destructive',
+  const selectedCity = form.watch('city');
+
+  /* ─── RIPOPOLA DAL SESSION STORAGE (ritorno da step-2) ─── */
+  useEffect(() => {
+    const stored = sessionStorage.getItem('form1Data');
+    if (!stored) return;
+    try {
+      form.reset(JSON.parse(stored));
+    } catch {
+      // sessionStorage corrotto, ignora
+    }
+  }, []);
+
+  /* ─── LOAD GOOGLE SCRIPT ─── */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.google) { setScriptLoaded(true); return; }
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places&language=it&region=IT`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setScriptLoaded(true);
+    document.head.appendChild(script);
+  }, []);
+
+  /* ─── GET CITY BOUNDS ─── */
+  function getCityBounds(city: string): Promise<google.maps.LatLngBounds> {
+    const geocoder = new window.google.maps.Geocoder();
+    return new Promise((resolve, reject) => {
+      geocoder.geocode({ address: city, region: 'it' }, (results, status) => {
+        if (status !== 'OK' || !results?.[0]?.geometry?.viewport) {
+          reject(new Error('Geocode failed'));
+          return;
+        }
+        resolve(results[0].geometry.viewport);
       });
+    });
+  }
+
+  /* ─── SETUP AUTOCOMPLETE ─── */
+  useEffect(() => {
+    if (!scriptLoaded || !selectedCity || !addressRef.current) return;
+
+    if (isFirstCityRender.current) {
+      isFirstCityRender.current = false;
+    } else {
+      form.setValue('address', '');
+      form.clearErrors('address');
+    }
+
+    let active = true;
+
+    async function init() {
+      try {
+        const bounds = await getCityBounds(selectedCity);
+        if (!active || !addressRef.current) return;
+
+        sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+
+        if (autocompleteRef.current) {
+          window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        }
+
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(
+          addressRef.current,
+          { types: ['address'], componentRestrictions: { country: 'it' }, bounds, strictBounds: true }
+        );
+        autocompleteRef.current.setOptions({ sessionToken: sessionTokenRef.current });
+
+        autocompleteRef.current.addListener('place_changed', () => {
+          const place = autocompleteRef.current?.getPlace();
+          if (!place?.address_components) {
+            form.setError('address', { type: 'manual', message: 'Indirizzo non valido' });
+            return;
+          }
+
+          const locality = place.address_components.find(
+            (c) => c.types.includes('locality') || c.types.includes('administrative_area_level_3')
+          );
+
+          if (!locality || locality.long_name.toLowerCase() !== selectedCity.toLowerCase()) {
+            form.setError('address', { type: 'manual', message: "L'indirizzo non appartiene al comune selezionato" });
+            return;
+          }
+
+          form.clearErrors('address');
+          form.setValue('address', place.formatted_address || '', { shouldValidate: true });
+          sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+        });
+      } catch {
+        // bounds non disponibili, autocomplete senza restrizione geografica
+      }
+    }
+
+    init();
+    return () => { active = false; };
+  }, [selectedCity, scriptLoaded]);
+
+  /* ─── SUBMIT ─── */
+  async function onSubmit(values: Step1FormValues) {
+    if (!recaptchaToken) {
+      toast({ title: 'Errore', description: 'Completa la verifica reCAPTCHA', variant: 'destructive' });
       return;
     }
 
     setIsLoading(true);
-
     try {
       const response = await fetch('/api/form-1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          recaptchaToken,
-        }),
+        body: JSON.stringify({ ...values, recaptchaToken }),
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Errore durante l\'invio');
-      }
-
-      // Mostra risultato
-      setResult(data.result);
-
-      // Salva dati in sessionStorage per Form 2
       sessionStorage.setItem('form1Data', JSON.stringify(values));
       sessionStorage.setItem('calculationResult', JSON.stringify(data.result));
       sessionStorage.setItem('sessionToken', data.sessionToken);
 
-      toast({
-        title: '✅ Preventivo Calcolato!',
-        description: 'Ti abbiamo inviato una email con i dettagli.',
-      });
-
-      // Redirect a Form 2 dopo 3 secondi
-      setTimeout(() => {
-        router.push('/step-2');
-      }, 3000);
-
+      toast({ title: 'Valutazione calcolata', description: 'Ti abbiamo inviato una email con i dettagli.' });
+      setTimeout(() => router.push('/step-2'), 2500);
     } catch (error: any) {
-      toast({
-        title: 'Errore',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Errore', description: error.message ?? 'Errore sconosciuto', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Richiedi un Preventivo
-          </h1>
-          <p className="text-lg text-gray-600">
-            Compila il form e ricevi subito il tuo preventivo personalizzato
-          </p>
-        </div>
-
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle>Dati Personali</CardTitle>
-            <CardDescription>
-              Inserisci i tuoi dati per ricevere un preventivo immediato
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                
-                {/* Nome */}
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Mario Rossi" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="mario@esempio.it" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Telefono */}
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefono</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+39 123 456 7890" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Quantità */}
-
-<FormField
-  control={form.control}
-  name="quantity"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Quantità</FormLabel>
-      <FormControl>
-        <Input 
-          type="number" 
-          min="1" 
-          placeholder="10" 
-          {...field}
-          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
-
-                {/* reCAPTCHA */}
-                <div className="flex justify-center">
-                  <ReCAPTCHA
-                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''}
-                    onChange={(token) => setRecaptchaToken(token)}
-                  />
-                </div>
-
-                {/* Risultato */}
-                {result && (
-                  <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-lg">
-                    <h3 className="text-xl font-bold text-green-900 mb-4">
-                      🎉 Il tuo preventivo
-                    </h3>
-                    <div className="space-y-2 text-gray-700">
-                      <p>
-                        <span className="font-semibold">Prezzo Base:</span> €{result.basePrice.toFixed(2)}
-                      </p>
-                      {result.discount > 0 && (
-                        <p className="text-green-600 font-semibold">
-                          <span>Sconto:</span> -€{result.discount.toFixed(2)}
-                        </p>
-                      )}
-                      <p className="text-2xl font-bold text-green-700 mt-4">
-                        Totale: €{result.finalPrice.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-2">
-                        {result.message}
-                      </p>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-4">
-                      Reindirizzamento al passo successivo...
-                    </p>
-                  </div>
-                )}
-
-                {/* Submit */}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Invio in corso...' : 'Calcola Preventivo →'}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <Step1View
+      form={form}
+      addressRef={addressRef}
+      isLoading={isLoading}
+      onSubmit={form.handleSubmit(onSubmit)}
+      onRecaptchaChange={setRecaptchaToken}
+    />
   );
 }
-
