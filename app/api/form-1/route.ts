@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { getValuationConfig } from '@/lib/config';
+import { getValuationConfig, getPricePerSqm } from '@/lib/config';
 
 /* ==========================
    SCHEMA
@@ -74,10 +74,12 @@ export async function POST(req: NextRequest) {
 
     /* ─── Business logic ─── */
     const config = await getValuationConfig();
-    const estimatedValue = validated.squareMeters * config.pricePerSqm;
+    const pricePerSqm = getPricePerSqm(config, validated.city);
+    const estimatedValue = validated.squareMeters * pricePerSqm;
 
     const result = {
-      pricePerSqm: config.pricePerSqm,
+      city: validated.city,
+      pricePerSqm,
       estimatedValue,
       message: 'Valutazione preliminare calcolata',
     };

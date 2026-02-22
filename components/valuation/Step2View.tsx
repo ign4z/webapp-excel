@@ -1,6 +1,6 @@
 'use client';
 
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, Controller } from 'react-hook-form';
 import ReCAPTCHA from 'react-google-recaptcha';
 import {
   PageShell,
@@ -12,7 +12,7 @@ import {
   GhostButton,
   CheckboxRow,
   tokens,
-} from './shared';
+} from '@/components/valuation/shared';
 
 export interface Step2FormValues {
   floor?: number;
@@ -70,7 +70,7 @@ export function Step2View({
   onRecaptchaChange,
   onNewValuation,
 }: Step2ViewProps) {
-  const { register, formState: { errors }, watch } = form;
+  const { register, formState: { errors }, control } = form;
 
   if (finalResult && excelUrl) {
     return <ResultScreen finalResult={finalResult} excelUrl={excelUrl} onNewValuation={onNewValuation} />;
@@ -279,28 +279,52 @@ export function Step2View({
               <span className="optional-tag">opzionali</span>
             </p>
             <div className="checkboxes">
-              <CheckboxRow
-                label="Ascensore"
-                checked={watch('hasElevator')}
-                onChange={register('hasElevator').onChange}
+              <Controller
+                control={control}
+                name="hasElevator"
+                render={({ field }) => (
+                  <CheckboxRow
+                    label="Ascensore"
+                    checked={!!field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                )}
               />
-              <CheckboxRow
-                label="Secondo bagno"
-                badge="+3%"
-                checked={watch('hasSecondBathroom')}
-                onChange={register('hasSecondBathroom').onChange}
+              <Controller
+                control={control}
+                name="hasSecondBathroom"
+                render={({ field }) => (
+                  <CheckboxRow
+                    label="Secondo bagno"
+                    badge="+3%"
+                    checked={!!field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                )}
               />
-              <CheckboxRow
-                label="Cantina"
-                badge="+3%"
-                checked={watch('hasCellar')}
-                onChange={register('hasCellar').onChange}
+              <Controller
+                control={control}
+                name="hasCellar"
+                render={({ field }) => (
+                  <CheckboxRow
+                    label="Cantina"
+                    badge="+3%"
+                    checked={!!field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                )}
               />
-              <CheckboxRow
-                label="Ristrutturato recentemente"
-                badge="+10%"
-                checked={watch('isRecentlyRenovated')}
-                onChange={register('isRecentlyRenovated').onChange}
+              <Controller
+                control={control}
+                name="isRecentlyRenovated"
+                render={({ field }) => (
+                  <CheckboxRow
+                    label="Ristrutturato recentemente"
+                    badge="+10%"
+                    checked={!!field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                )}
               />
             </div>
           </VLCard>
