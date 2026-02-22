@@ -53,7 +53,7 @@ const CACHE_TTL = 1000 * 60 * 5; // 5 minuti
 export async function getValuationConfig(): Promise<ValuationConfig> {
   // Serve cache valida
   if (cachedConfig && Date.now() < cacheExpiry) {
-    return cachedConfig;
+    return cachedConfig!;
   }
 
   try {
@@ -79,7 +79,7 @@ export async function getValuationConfig(): Promise<ValuationConfig> {
     cachedConfig = { ...defaultConfig, ...remote };
     cacheExpiry = Date.now() + CACHE_TTL;
 
-    return cachedConfig;
+    return cachedConfig!;
   } catch (error) {
     console.warn('Using default config:', error);
     return defaultConfig;

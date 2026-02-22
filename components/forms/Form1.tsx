@@ -110,7 +110,6 @@ export default function Form1() {
           addressRef.current,
           { types: ['address'], componentRestrictions: { country: 'it' }, bounds, strictBounds: true }
         );
-        autocompleteRef.current.setOptions({ sessionToken: sessionTokenRef.current });
 
         autocompleteRef.current.addListener('place_changed', () => {
           const place = autocompleteRef.current?.getPlace();

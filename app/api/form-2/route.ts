@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Error in /api/form-2:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Dati non validi', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Dati non validi', details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: 'Errore del server' }, { status: 500 });
   }

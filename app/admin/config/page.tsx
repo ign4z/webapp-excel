@@ -1,5 +1,4 @@
 'use client';
-
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import ConfigEditor from '@/components/admin/ConfigEditor';
@@ -23,8 +22,7 @@ function ConfigPageContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-12 px-4">
       <div className="max-w-4xl mx-auto">
-        
-        {/* Header */}
+
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             🔧 Admin - Configurazione
@@ -34,15 +32,14 @@ function ConfigPageContent() {
           </p>
         </div>
 
-        {/* Navigation */}
         <div className="mb-6 flex gap-4">
-          <Link 
+          <Link
             href={`/admin/files?token=${token}`}
             className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
           >
             📂 Gestione File
           </Link>
-          <Link 
+          <Link
             href="/"
             className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
           >
@@ -50,8 +47,9 @@ function ConfigPageContent() {
           </Link>
         </div>
 
-        {/* Config Editor */}
-        <ConfigEditor token={token} />
+        {/* ConfigEditor legge il token da window.location.search autonomamente */}
+        <ConfigEditor />
+
       </div>
     </div>
   );
