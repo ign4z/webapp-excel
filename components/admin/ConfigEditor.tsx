@@ -2,14 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-
-const ALLOWED_CITIES = [
-  'Milano',
-  'Monza',
-  'Sesto San Giovanni',
-  'Cinisello Balsamo',
-  'Locate di Triulzi',
-];
+import { ALLOWED_CITIES } from '@/lib/cities';
 
 const configSchema = z.object({
   pricePerSqmByCity: z.record(z.string(), z.number().min(100).max(20000)),
@@ -32,11 +25,13 @@ type ConfigType = z.infer<typeof configSchema>;
 
 const defaultConfig: ConfigType = {
   pricePerSqmByCity: {
-    'Milano': 4500,
-    'Monza': 2800,
-    'Sesto San Giovanni': 2400,
-    'Cinisello Balsamo': 2200,
     'Locate di Triulzi': 2000,
+    'Fizzonasco': 1750,
+    'Opera': 1900,
+    'Pieve Emanuele': 1850,
+    'Tolcinasco': 1650,
+    'Siziano': 1700,
+    'Carpiano': 1600,
   },
   pricePerSqmDefault: 2500,
   depreciation: 0.3,

@@ -24,11 +24,13 @@ export type ValuationConfig = {
 
 export const defaultConfig: ValuationConfig = {
   pricePerSqmByCity: {
-    'Milano': 4500,
-    'Monza': 2800,
-    'Sesto San Giovanni': 2400,
-    'Cinisello Balsamo': 2200,
     'Locate di Triulzi': 2000,
+    'Fizzonasco': 1750,
+    'Opera': 1900,
+    'Pieve Emanuele': 1850,
+    'Tolcinasco': 1650,
+    'Siziano': 1700,
+    'Carpiano': 1600,
   },
   pricePerSqmDefault: 2500,
   depreciation: 0.3,
