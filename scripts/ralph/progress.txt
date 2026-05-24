@@ -2,6 +2,14 @@
 Started: 05/24/2026 20:55:22
 ---
 
+## 2026-05-24 - US-020
+- Creato README.md (168 righe, in italiano) con sezioni: Overview, Setup, Sviluppo, Architettura, Flusso utente, Pannello Admin, API Reference, Comuni supportati, Deploy
+- Il README esistente era il template default di create-next-app — completamente riscritto
+- Files changed: README.md
+- **Learnings for future iterations:**
+  - Il README di default di create-next-app è presente in ogni progetto Next.js — da sostituire sempre con documentazione reale
+---
+
 ## 2026-05-24 - US-019
 - Added JSDoc to `getValuationConfig()` (cache 5min + fallback to default) and `getPricePerSqm()` in lib/config.ts
 - Updated JSDoc in lib/email.ts to mention fire-and-forget pattern (sendAdminNotification) and RESEND_API_KEY requirement

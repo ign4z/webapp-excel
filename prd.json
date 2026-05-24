@@ -285,7 +285,7 @@
         "Nessun typecheck necessario per un file .md"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "notes": "Ultimo story — da completare dopo che tutti gli altri sono stabili"
     }
   ]
