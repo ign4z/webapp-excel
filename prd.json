@@ -30,7 +30,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Da eseguire dopo US-001. I prezzi sono stime realistiche per il mercato zona sud Milano 2024"
     },
     {
@@ -44,7 +44,7 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -58,7 +58,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -72,7 +72,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -86,7 +86,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -100,7 +100,7 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -114,7 +114,7 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -127,7 +127,7 @@
         "Typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Da eseguire dopo US-003..US-008"
     },
     {
@@ -142,7 +142,7 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Usa ExcelJS già in dipendenze. Buffer -> NextResponse con headers custom"
     },
     {
@@ -156,7 +156,7 @@
         "Typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Leggere blob esistente prima del put per preservare i prezzi civico (chiavi con ':')"
     },
     {
@@ -172,7 +172,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Il token è in URL params già usati da StreetsEditor per le altre chiamate API"
     },
     {
@@ -186,7 +186,7 @@
         "Typecheck passes"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Non serve migrare dati esistenti — le chiavi civic sono opzionali, il fallback alla via funziona sempre"
     },
     {
@@ -201,7 +201,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Se non ci sono prezzi civico, la sezione può essere nascosta o mostrare 'Nessun prezzo civico'"
     },
     {
@@ -214,7 +214,7 @@
         "Nessun cambiamento visivo. Typecheck passes"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Container/presentational pattern. Stessa funzionalità, solo separazione responsabilità"
     },
     {
@@ -227,7 +227,7 @@
         "Nessun cambiamento visivo. Typecheck passes"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -240,7 +240,7 @@
         "Nessun cambiamento visivo. Typecheck passes"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -255,7 +255,7 @@
         "Typecheck passes"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "notes": "Security story — nessun cambiamento visivo. Test con valori boundary"
     },
     {
@@ -272,7 +272,7 @@
         "Typecheck passes"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

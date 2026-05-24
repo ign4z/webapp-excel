@@ -1,0 +1,14 @@
+﻿# Ralph Progress Log
+Started: 05/24/2026 20:55:22
+---
+
+## 2026-05-24 - US-019
+- Added JSDoc to `getValuationConfig()` (cache 5min + fallback to default) and `getPricePerSqm()` in lib/config.ts
+- Updated JSDoc in lib/email.ts to mention fire-and-forget pattern (sendAdminNotification) and RESEND_API_KEY requirement
+- lib/streets/index.ts and lib/cities.ts already had adequate JSDoc from prior iterations; no changes needed
+- lib/excel.ts does not exist in this project; acceptance criteria item skipped
+- Files changed: lib/config.ts, lib/email.ts
+- **Learnings for future iterations:**
+  - lib/streets/index.ts JSDoc was already complete from a prior story (extractStreetName, extractCivicNumber, getPriceForStreet all documented)
+  - lib/excel.ts referenced in PRD but does not exist — PRD may be aspirational for a future story
+---
