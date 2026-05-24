@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { getValuationConfig, getPricePerSqm } from '@/lib/config';
+import { sendForm1Email } from '@/lib/email';
 
 /* ==========================
    SCHEMA
@@ -85,6 +86,17 @@ export async function POST(req: NextRequest) {
     };
 
     const sessionToken = crypto.randomBytes(32).toString('hex');
+
+    sendForm1Email({
+      email: validated.email,
+      firstName: validated.firstName,
+      lastName: validated.lastName,
+      city: validated.city,
+      address: validated.address,
+      squareMeters: validated.squareMeters,
+      pricePerSqm,
+      estimatedValue,
+    }).catch((err) => console.error('Email Form 1 failed:', err));
 
     return NextResponse.json({ result, sessionToken });
   } catch (error: any) {

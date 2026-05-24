@@ -10,70 +10,79 @@ function getResendClient() {
 }
 
 /**
- * Invia email dopo Form 1 (con risultato calcolo)
+ * Invia email dopo Form 1 con la stima preliminare
  */
-export async function sendForm1Email(
-  email: string,
-  name: string,
-  result: {
-    basePrice: number;
-    finalPrice: number;
-    discount: number;
-    message: string;
-  }
-) {
+export async function sendForm1Email(params: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  city: string;
+  address: string;
+  squareMeters: number;
+  pricePerSqm: number;
+  estimatedValue: number;
+}) {
   try {
     const resend = getResendClient();
     if (!resend) {
       return { success: false, error: 'Resend non configurato' };
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
     const { data, error } = await resend.emails.send({
-      from: 'WebApp <onboarding@resend.dev>',
-      to: email,
-      subject: 'Il tuo preventivo è pronto!',
+      from: 'Valutazione Immobiliare <onboarding@resend.dev>',
+      to: params.email,
+      subject: 'La tua stima immobiliare preliminare',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #1E2230; margin: 0; padding: 0; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #0070C0; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-            .result-box { background: white; padding: 20px; margin: 20px 0; border-left: 4px solid #0070C0; }
-            .price { font-size: 32px; font-weight: bold; color: #0070C0; margin: 10px 0; }
-            .discount { color: #28a745; font-weight: bold; }
-            .button { display: inline-block; background: #0070C0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+            .header { background: #1E2230; color: white; padding: 28px 32px; border-radius: 8px 8px 0 0; }
+            .header h1 { margin: 0 0 4px; font-size: 22px; font-weight: 600; }
+            .header p { margin: 0; color: #A0A8BC; font-size: 14px; }
+            .content { background: #FAFAF8; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #EDE8DF; border-top: none; }
+            .estimate-box { background: white; border: 1px solid #EDE8DF; border-radius: 8px; padding: 24px; margin: 24px 0; }
+            .estimate-box table { width: 100%; border-collapse: collapse; }
+            .estimate-box td { padding: 8px 0; font-size: 14px; border-bottom: 1px solid #F3EFE8; }
+            .estimate-box td:last-child { text-align: right; font-weight: 500; }
+            .estimate-box tr:last-child td { border-bottom: none; }
+            .final-value { font-size: 28px; font-weight: 700; color: #9A7535; margin: 20px 0 4px; }
+            .label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
+            .button { display: inline-block; background: #C9A84C; color: #1E2230; padding: 13px 32px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 13px; margin-top: 8px; }
+            .footer { font-size: 12px; color: #9CA3AF; margin-top: 28px; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎉 Ciao ${name}!</h1>
+              <h1>Ciao ${params.firstName},</h1>
+              <p>Ecco la tua stima immobiliare preliminare</p>
             </div>
             <div class="content">
-              <p>Grazie per aver richiesto un preventivo. Ecco i dettagli:</p>
-              
-              <div class="result-box">
-                <h2>Riepilogo Prezzi</h2>
-                <p><strong>Prezzo Base:</strong> €${result.basePrice.toFixed(2)}</p>
-                ${result.discount > 0 ? `<p class="discount"><strong>Sconto Applicato:</strong> -€${result.discount.toFixed(2)}</p>` : ''}
-                <p class="price">€${result.finalPrice.toFixed(2)}</p>
-                <p style="margin-top: 15px; padding: 10px; background: #e8f4f8; border-radius: 5px;">
-                  ℹ️ ${result.message}
-                </p>
+              <p>Abbiamo calcolato una stima di base per il tuo immobile in base alla superficie e alla zona.</p>
+
+              <div class="estimate-box">
+                <table>
+                  <tr><td>Comune</td><td>${params.city}</td></tr>
+                  <tr><td>Indirizzo</td><td>${params.address}</td></tr>
+                  <tr><td>Superficie</td><td>${params.squareMeters} mq</td></tr>
+                  <tr><td>Prezzo al mq</td><td>€${params.pricePerSqm.toLocaleString('it-IT')}</td></tr>
+                </table>
+                <div style="border-top: 1px solid #EDE8DF; margin-top: 16px; padding-top: 16px;">
+                  <p class="label">Stima base</p>
+                  <p class="final-value">€${params.estimatedValue.toLocaleString('it-IT')}</p>
+                </div>
               </div>
 
-              <p>Per completare la richiesta, clicca sul pulsante qui sotto:</p>
-              <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/step-2" class="button">
-                Completa la Richiesta →
-              </a>
+              <p>Questa è solo una stima preliminare. Per affinare il risultato con le caratteristiche specifiche dell'immobile, completa il secondo step:</p>
+              <a href="${baseUrl}/step-2" class="button">Affina la valutazione →</a>
 
-              <p style="margin-top: 30px; font-size: 12px; color: #666;">
-                Questa email è stata inviata automaticamente. Non rispondere a questo messaggio.
-              </p>
+              <p class="footer">Questa email è stata inviata automaticamente. Non rispondere a questo messaggio.</p>
             </div>
           </div>
         </body>
@@ -88,7 +97,7 @@ export async function sendForm1Email(
 
     console.log('✅ Email Form 1 inviata:', data);
     return { success: true, data };
-    
+
   } catch (error) {
     console.error('❌ Errore catch email Form 1:', error);
     return { success: false, error };
