@@ -36,13 +36,19 @@ function FilesPageContent() {
 
         {/* Navigation */}
         <div className="mb-6 flex gap-4">
-          <Link 
+          <Link
             href={`/admin/config?token=${token}`}
             className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
           >
             ⚙️ Configurazione
           </Link>
-          <Link 
+          <Link
+            href={`/admin/streets?token=${token}`}
+            className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
+          >
+            🗺️ Prezzi per Via
+          </Link>
+          <Link
             href="/"
             className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
           >

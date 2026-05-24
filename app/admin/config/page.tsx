@@ -40,6 +40,12 @@ function ConfigPageContent() {
             📂 Gestione File
           </Link>
           <Link
+            href={`/admin/streets?token=${token}`}
+            className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
+          >
+            🗺️ Prezzi per Via
+          </Link>
+          <Link
             href="/"
             className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
           >
