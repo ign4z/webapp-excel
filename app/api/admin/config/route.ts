@@ -32,42 +32,54 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body: Partial<ValuationConfig> = await request.json();
+    const body = await request.json();
+
+    if (typeof body !== 'object' || Array.isArray(body) || body === null) {
+      return NextResponse.json({ success: false, error: 'Body non valido' }, { status: 400 });
+    }
+
+    // Reject unknown keys (only keys of ValuationConfig are allowed)
+    const allowedKeys = new Set<string>([
+      'pricePerSqmByCity', 'pricePerSqmDefault', 'depreciation', 'secondBathroom',
+      'cellar', 'renovated', 'groundFloor', 'topFloor', 'exposureSouth', 'exposureEast',
+      'exposureWest', 'exposureNorth', 'heatingAutonomous', 'heatingCentralized',
+    ]);
+    for (const key of Object.keys(body)) {
+      if (!allowedKeys.has(key)) {
+        return NextResponse.json({ success: false, error: `Chiave non consentita: ${key}` }, { status: 400 });
+      }
+    }
 
     // Merge con i default per campi mancanti
     const newConfig: ValuationConfig = { ...defaultConfig, ...body };
 
-    // Validazione campi numerici obbligatori
-    const numericFields: (keyof ValuationConfig)[] = [
-      'pricePerSqmDefault',
-      'depreciation',
-      'secondBathroom',
-      'cellar',
-      'renovated',
-      'groundFloor',
-      'topFloor',
-      'exposureSouth',
-      'exposureEast',
-      'exposureWest',
-      'exposureNorth',
-      'heatingAutonomous',
-      'heatingCentralized',
-    ];
-
-    for (const field of numericFields) {
-      if (typeof newConfig[field] !== 'number') {
-        return NextResponse.json(
-          { success: false, error: `Campo non valido: ${field}` },
-          { status: 400 }
-        );
+    // Validate pricePerSqmByCity
+    if (!newConfig.pricePerSqmByCity || typeof newConfig.pricePerSqmByCity !== 'object') {
+      return NextResponse.json({ success: false, error: 'pricePerSqmByCity non valido' }, { status: 400 });
+    }
+    for (const [city, price] of Object.entries(newConfig.pricePerSqmByCity)) {
+      if (!Number.isFinite(price) || price < 100 || price > 50000) {
+        return NextResponse.json({ success: false, error: `Prezzo non valido per ${city}: deve essere tra 100 e 50000` }, { status: 400 });
       }
     }
 
-    if (!newConfig.pricePerSqmByCity || typeof newConfig.pricePerSqmByCity !== 'object') {
-      return NextResponse.json(
-        { success: false, error: 'pricePerSqmByCity non valido' },
-        { status: 400 }
-      );
+    // Validate numeric percentage fields (plausible range: -100 to 100)
+    const percentageFields: (keyof Omit<ValuationConfig, 'pricePerSqmByCity' | 'pricePerSqmDefault' | 'depreciation'>)[] = [
+      'secondBathroom', 'cellar', 'renovated', 'groundFloor', 'topFloor',
+      'exposureSouth', 'exposureEast', 'exposureWest', 'exposureNorth',
+      'heatingAutonomous', 'heatingCentralized',
+    ];
+    for (const field of percentageFields) {
+      const val = newConfig[field];
+      if (!Number.isFinite(val) || val < -100 || val > 100) {
+        return NextResponse.json({ success: false, error: `Valore non valido per ${field}: deve essere tra -100 e 100` }, { status: 400 });
+      }
+    }
+    if (!Number.isFinite(newConfig.pricePerSqmDefault) || newConfig.pricePerSqmDefault < 100 || newConfig.pricePerSqmDefault > 50000) {
+      return NextResponse.json({ success: false, error: 'pricePerSqmDefault deve essere tra 100 e 50000' }, { status: 400 });
+    }
+    if (!Number.isFinite(newConfig.depreciation) || newConfig.depreciation < 0 || newConfig.depreciation > 100) {
+      return NextResponse.json({ success: false, error: 'depreciation deve essere tra 0 e 100' }, { status: 400 });
     }
 
     // Salva su Vercel Blob sovrascrivendo il file esistente

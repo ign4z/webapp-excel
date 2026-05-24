@@ -57,12 +57,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (typeof body !== 'object' || Array.isArray(body) || body === null) {
-      return NextResponse.json({ error: 'Body non valido' }, { status: 400 });
+      return NextResponse.json({ error: 'Body deve essere un oggetto' }, { status: 400 });
+    }
+
+    const entries = Object.entries(body);
+    if (entries.length > 1000) {
+      return NextResponse.json({ error: 'Troppi elementi: max 1000 chiavi' }, { status: 400 });
     }
 
     const normalized: Record<string, number> = {};
-    for (const [key, value] of Object.entries(body)) {
-      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) continue;
+    for (const [key, value] of entries) {
+      if (key.length > 150) {
+        return NextResponse.json({ error: `Chiave troppo lunga: "${key.slice(0, 30)}..."` }, { status: 400 });
+      }
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        return NextResponse.json({ error: `Valore non valido per chiave "${key}": deve essere un numero positivo finito` }, { status: 400 });
+      }
       normalized[key.toLowerCase().trim()] = value;
     }
 
