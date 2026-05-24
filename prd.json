@@ -1,0 +1,292 @@
+{
+  "project": "Webapp Valutazione Immobiliare",
+  "branchName": "ralph/v2-municipalities-mvc",
+  "description": "Fase 2: nuovi comuni zona sud Milano, prezzo per civico, import/export Excel strade, pattern MVC admin, hardening sicurezza, JSDoc, README, ottimizzazione",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Centralizzare definizione comuni in lib/cities.ts",
+      "description": "As a developer, I want a single source of truth for the list of supported municipalities so that adding/removing cities only requires one file change.",
+      "acceptanceCriteria": [
+        "Creare lib/cities.ts con: export const ALLOWED_CITIES: string[] (array dei comuni supportati) e export function cityToSlug(city: string): string (lowercase + trattini)",
+        "La lista ALLOWED_CITIES deve contenere: 'Locate di Triulzi', 'Fizzonasco', 'Opera', 'Pieve Emanuele', 'Tolcinasco', 'Siziano', 'Carpiano'",
+        "In components/valuation/Step1View.tsx: rimuovere la definizione locale di ALLOWED_CITIES e importarla da '@/lib/cities'",
+        "In app/api/form-1/route.ts: rimuovere la definizione locale di ALLOWED_CITIES e importarla da '@/lib/cities'. Aggiornare il messaggio di errore per usare ALLOWED_CITIES.join(', ')",
+        "In lib/streets/index.ts: rimuovere cityToSlug() locale e importarla da '@/lib/cities'",
+        "In app/api/admin/streets/route.ts: rimuovere SUPPORTED_CITIES hardcoded e derivarlo da ALLOWED_CITIES via cityToSlug",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Foundational refactor — tutti gli altri US dipendono da questa lista centralizzata"
+    },
+    {
+      "id": "US-002",
+      "title": "Aggiornare config prezzi/mq per nuovi comuni",
+      "description": "As a developer, I need the valuation config to reflect the new municipality list with realistic price-per-sqm values.",
+      "acceptanceCriteria": [
+        "In lib/config.ts, aggiornare defaultConfig.pricePerSqmByCity rimuovendo 'Milano', 'Monza', 'Sesto San Giovanni', 'Cinisello Balsamo' e aggiungendo: 'Locate di Triulzi': 2000, 'Fizzonasco': 1750, 'Opera': 1900, 'Pieve Emanuele': 1850, 'Tolcinasco': 1650, 'Siziano': 1700, 'Carpiano': 1600",
+        "In components/admin/ConfigEditor.tsx: aggiornare la lista di comuni nei slider (rimuovere i vecchi, aggiungere i nuovi con gli stessi valori di defaultConfig)",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Da eseguire dopo US-001. I prezzi sono stime realistiche per il mercato zona sud Milano 2024"
+    },
+    {
+      "id": "US-003",
+      "title": "Seed strade per Opera",
+      "description": "As a developer, I need street-level price seed data for Opera to enable granular pricing.",
+      "acceptanceCriteria": [
+        "Creare lib/streets/opera.ts",
+        "Esportare streetPrices: Record<string, number> con almeno 20 vie di Opera (chiavi lowercase). Esempi realistici: 'via roma' 2050, 'via milano' 2000, 'via kennedy' 1980, 'via mazzini' 1950, 'via garibaldi' 1950, 'piazza della chiesa' 2000, 'via delle industrie' 1750, 'via dei platani' 1900, 'via risorgimento' 1920, 'via xxv aprile' 1930, 'via don minzoni' 1880, 'via cavour' 1950, 'via trento' 1900, 'via trieste' 1890, 'via dante' 1920, 'via leopardi' 1900, 'via montegrappa' 1880, 'via dei fiori' 1870, 'via cascina' 1800, 'via dei campi' 1780",
+        "Esportare defaultPrice = 1900",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Seed strade per Pieve Emanuele",
+      "description": "As a developer, I need street-level price seed data for Pieve Emanuele.",
+      "acceptanceCriteria": [
+        "Creare lib/streets/pieve-emanuele.ts",
+        "Esportare streetPrices: Record<string, number> con almeno 20 vie di Pieve Emanuele (chiavi lowercase). Esempi: 'via roma' 2000, 'via kennedy' 1930, 'via mazzini' 1900, 'via garibaldi' 1900, 'via delle primule' 1880, 'via del sole' 1870, 'via cavour' 1900, 'piazza municipio' 1950, 'via trento' 1850, 'via trieste' 1840, 'via dante' 1870, 'via leopardi' 1860, 'via torino' 1850, 'via delle industrie' 1700, 'via dei platani' 1850, 'via risorgimento' 1880, 'via don bosco' 1860, 'via xxv aprile' 1870, 'via dei campi' 1780, 'via cascina' 1750",
+        "Esportare defaultPrice = 1850",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Seed strade per Fizzonasco",
+      "description": "As a developer, I need street-level price seed data for Fizzonasco.",
+      "acceptanceCriteria": [
+        "Creare lib/streets/fizzonasco.ts",
+        "Esportare streetPrices: Record<string, number> con almeno 15 vie di Fizzonasco (piccolo borgo, meno vie). Esempi: 'via roma' 1850, 'via mazzini' 1800, 'via garibaldi' 1800, 'via kennedy' 1780, 'via della chiesa' 1820, 'piazza municipio' 1830, 'via dei campi' 1700, 'via cascina' 1700, 'via delle rogge' 1750, 'via del bosco' 1720, 'via torino' 1750, 'via trieste' 1760, 'via risorgimento' 1780, 'via xxv aprile' 1780, 'via dante' 1760",
+        "Esportare defaultPrice = 1750",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Seed strade per Tolcinasco",
+      "description": "As a developer, I need street-level price seed data for Tolcinasco.",
+      "acceptanceCriteria": [
+        "Creare lib/streets/tolcinasco.ts",
+        "Esportare streetPrices: Record<string, number> con almeno 12 vie di Tolcinasco (borgo molto piccolo). Esempi: 'via roma' 1750, 'via mazzini' 1700, 'via della chiesa' 1730, 'via dei campi' 1650, 'via cascina' 1650, 'via delle rogge' 1680, 'via del bosco' 1650, 'via risorgimento' 1700, 'via xxv aprile' 1700, 'via garibaldi' 1710, 'via kennedy' 1680, 'via dante' 1700",
+        "Esportare defaultPrice = 1650",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Seed strade per Siziano",
+      "description": "As a developer, I need street-level price seed data for Siziano.",
+      "acceptanceCriteria": [
+        "Creare lib/streets/siziano.ts",
+        "Esportare streetPrices: Record<string, number> con almeno 18 vie di Siziano. Esempi: 'via roma' 1800, 'via kennedy' 1750, 'via mazzini' 1750, 'via garibaldi' 1760, 'piazza della vittoria' 1810, 'via cavour' 1760, 'via dante' 1750, 'via leopardi' 1730, 'via xxv aprile' 1750, 'via risorgimento' 1740, 'via dei campi' 1680, 'via cascina' 1680, 'via della roggia' 1700, 'via del mulino' 1700, 'via torino' 1720, 'via trieste' 1720, 'via trento' 1700, 'via delle industrie' 1600",
+        "Esportare defaultPrice = 1700",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Seed strade per Carpiano",
+      "description": "As a developer, I need street-level price seed data for Carpiano.",
+      "acceptanceCriteria": [
+        "Creare lib/streets/carpiano.ts",
+        "Esportare streetPrices: Record<string, number> con almeno 15 vie di Carpiano. Esempi: 'via roma' 1700, 'via kennedy' 1650, 'via mazzini' 1650, 'via garibaldi' 1660, 'piazza municipio' 1700, 'via cavour' 1660, 'via dante' 1650, 'via xxv aprile' 1640, 'via risorgimento' 1640, 'via dei campi' 1600, 'via cascina' 1600, 'via della roggia' 1620, 'via del mulino' 1620, 'via torino' 1630, 'via delle industrie' 1550",
+        "Esportare defaultPrice = 1600",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Aggiornare SEED_MAP in lib/streets/index.ts per tutti i comuni",
+      "description": "As a developer, I need the street lookup system to include all new municipalities in its seed map.",
+      "acceptanceCriteria": [
+        "In lib/streets/index.ts: importare i seed di tutti i nuovi comuni (opera, pieve-emanuele, fizzonasco, tolcinasco, siziano, carpiano) e aggiungerli a SEED_MAP con le chiavi slug corrispondenti (es. 'opera', 'pieve-emanuele', 'fizzonasco', 'tolcinasco', 'siziano', 'carpiano')",
+        "La funzione getPriceForStreet deve funzionare correttamente per tutti i 7 comuni",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Da eseguire dopo US-003..US-008"
+    },
+    {
+      "id": "US-010",
+      "title": "Endpoint GET /api/admin/streets/template - download template Excel",
+      "description": "As an admin, I want to download the current street prices as an Excel file so I can edit them offline and re-import.",
+      "acceptanceCriteria": [
+        "Creare app/api/admin/streets/template/route.ts",
+        "GET /api/admin/streets/template?token=SECRET&city=locate-di-triulzi: verifica token. Carica dati strade dalla city (stesso meccanismo GET /api/admin/streets). Genera file .xlsx con ExcelJS: riga 1 = intestazioni ('Via', 'Prezzo al mq'), righe successive = dati ordinati per chiave. Restituisce il file con Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet e Content-Disposition: attachment; filename='strade-<city>.xlsx'",
+        "I file con chiavi civic ('via roma:15') vengono esclusi dal template (solo chiavi street senza ':')",
+        "Se la city non è supportata, restituire 400",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Usa ExcelJS già in dipendenze. Buffer -> NextResponse con headers custom"
+    },
+    {
+      "id": "US-011",
+      "title": "Endpoint POST /api/admin/streets/import - import Excel batch strade",
+      "description": "As an admin, I want to upload an Excel file to bulk-update street prices for a city.",
+      "acceptanceCriteria": [
+        "Creare app/api/admin/streets/import/route.ts",
+        "POST /api/admin/streets/import?token=SECRET&city=locate-di-triulzi: accetta multipart/form-data con campo 'file' (.xlsx). Verifica token e city. Parsea il file con ExcelJS: legge tutte le righe dalla seconda in poi (prima = header), colonna A = nome via (string), colonna B = prezzo (number). Normalizza le chiavi (lowercase + trim). Valida: scarta righe con via vuota o prezzo non numerico/negativo. Salva su Blob con PUT (allowOverwrite: true), MERGENDO con i civici esistenti (non sovrascrive le chiavi civic 'via:N'). Restituisce { success: true, imported: number, skipped: number, errors: string[] }",
+        "Max 1000 righe per file. Se superato, restituire 400",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Leggere blob esistente prima del put per preservare i prezzi civico (chiavi con ':')"
+    },
+    {
+      "id": "US-012",
+      "title": "UI bottoni import/export Excel in StreetsEditor",
+      "description": "As an admin, I want import/export buttons in the streets editor UI for batch operations.",
+      "acceptanceCriteria": [
+        "In components/admin/StreetsEditor.tsx: aggiungere pulsante 'Scarica template' che fa GET /api/admin/streets/template?token=...&city=... e triggera download del file .xlsx (usare fetch + blob URL + <a> click trick)",
+        "Aggiungere pulsante 'Importa da Excel' che apre un file picker (input type=file, accept=.xlsx) e su selezione fa POST a /api/admin/streets/import?token=...&city=... con FormData. Mostra feedback: 'Importate N vie' oppure messaggio errore",
+        "Dopo import riuscito, ricaricare i dati dalla API (chiamata GET /api/admin/streets) per aggiornare la tabella",
+        "I due pulsanti sono visibili sopra la tabella, design coerente con gli altri pulsanti admin",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Il token è in URL params già usati da StreetsEditor per le altre chiamate API"
+    },
+    {
+      "id": "US-013",
+      "title": "Prezzo per civico - struttura dati e lookup",
+      "description": "As a developer, I need the pricing system to support civic-number-level prices with fallback to street level.",
+      "acceptanceCriteria": [
+        "In lib/streets/index.ts: aggiungere export function extractCivicNumber(formattedAddress: string): string | null — prende parts[1].trim() dall'indirizzo Google Maps (es. 'Via Roma, 15, 20085 Locate di Triulzi' -> '15'). Restituisce null se il segmento non è un numero puro",
+        "Aggiornare getPriceForStreet: dopo aver ottenuto la streetMap dal blob/seed, cercare prima la chiave '<streetName>:<civicNumber>' (se civicNumber != null), poi '<streetName>', poi seed.defaultPrice, poi globalDefault",
+        "Il formato blob rimane Record<string, number> — backward compatible. Le chiavi civic hanno il formato 'via roma:15'",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Non serve migrare dati esistenti — le chiavi civic sono opzionali, il fallback alla via funziona sempre"
+    },
+    {
+      "id": "US-014",
+      "title": "Prezzo per civico - sezione admin in StreetsEditor",
+      "description": "As an admin, I want to manage civic-number-specific prices in the streets editor.",
+      "acceptanceCriteria": [
+        "In components/admin/StreetsEditor.tsx: separare le righe in due sezioni in base alla chiave: 'Prezzi per via' (chiavi senza ':') e 'Prezzi per civico' (chiavi con ':', es. 'via roma:15')",
+        "Nella sezione 'Prezzi per civico': mostrare le righe come 'Via / Civico / Prezzo'. Aggiungere pulsante 'Aggiungi prezzo civico' che apre un form inline con: dropdown via (dalle vie già in lista), input testo civico, input prezzo",
+        "Il salvataggio (POST /api/admin/streets) unifica le due sezioni in un unico Record<string, number> con chiavi corrette",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Se non ci sono prezzi civico, la sezione può essere nascosta o mostrare 'Nessun prezzo civico'"
+    },
+    {
+      "id": "US-015",
+      "title": "MVC admin - split ConfigEditor in View + Controller",
+      "description": "As a developer, I want ConfigEditor to follow the MVC pattern so rendering is decoupled from business logic.",
+      "acceptanceCriteria": [
+        "Creare components/admin/ConfigEditorView.tsx: componente React puro (no useState, no fetch) che riceve via props tutti i dati e le callback necessarie. Props: config (ValuationConfig), saving (boolean), message (string), onConfigChange (field, value) => void, onSave () => void, onReset () => void. Render identico all'attuale ConfigEditor",
+        "Riscrivere components/admin/ConfigEditor.tsx come controller: gestisce useState (config, saving, message), fa fetch GET/POST all'API, passa tutto come props a ConfigEditorView",
+        "Nessun cambiamento visivo. Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "Container/presentational pattern. Stessa funzionalità, solo separazione responsabilità"
+    },
+    {
+      "id": "US-016",
+      "title": "MVC admin - split FileTable in View + Controller",
+      "description": "As a developer, I want FileTable to follow the MVC pattern.",
+      "acceptanceCriteria": [
+        "Creare components/admin/FileTableView.tsx: componente puro che riceve props: files (array blob), loading (boolean), deletingUrl (string | null), onDelete (url: string) => void. Render identico all'attuale FileTable",
+        "Riscrivere components/admin/FileTable.tsx come controller: gestisce stato e logica delete, passa props a FileTableView",
+        "Nessun cambiamento visivo. Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "MVC admin - split StreetsEditor in View + Controller",
+      "description": "As a developer, I want StreetsEditor to follow the MVC pattern.",
+      "acceptanceCriteria": [
+        "Creare components/admin/StreetsEditorView.tsx: componente puro che riceve props: city (string), cities (string[]), rows (array {key, value}), civicRows (array {street, civic, price}), loading (boolean), saving (boolean), message (string), e tutte le callback (onCityChange, onRowChange, onDeleteRow, onAddRow, onAddCivic, onDeleteCivic, onSave, onImport, onDownloadTemplate)",
+        "Riscrivere components/admin/StreetsEditor.tsx come controller: gestisce tutto lo stato e le chiamate API, passa props a StreetsEditorView",
+        "Nessun cambiamento visivo. Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Security hardening - validazione e sanitizzazione API admin",
+      "description": "As a security engineer, I want the admin APIs to be hardened against malformed input and injection.",
+      "acceptanceCriteria": [
+        "In app/api/admin/streets/route.ts POST: aggiungere validazione body — deve essere un oggetto (typeof === 'object', not array, not null). Max 1000 chiavi. Ogni chiave max 150 caratteri. Ogni valore deve essere un numero finito positivo (Number.isFinite && val > 0). Restituire 400 con dettaglio in caso di violazione",
+        "In app/api/admin/streets/route.ts GET e POST: validare che il parametro city corrisponda al pattern /^[a-z0-9-]+$/ (solo lowercase, numeri, trattini). Questo previene path traversal nel blob path 'streets/<city>.json'",
+        "In app/api/admin/config/route.ts POST: aggiungere validazione che il body contenga solo le chiavi del tipo ValuationConfig, che tutti i valori numerici siano finiti e nei range plausibili (prezzi 100-50000, percentuali -100-100). Restituire 400 se la validazione fallisce",
+        "In app/api/admin/streets/import/route.ts: limite dimensione file — rifiutare se Content-Length > 5MB. Usare arrayBuffer con timeout implicito di Next.js",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": "Security story — nessun cambiamento visivo. Test con valori boundary"
+    },
+    {
+      "id": "US-019",
+      "title": "JSDoc comments per tutte le funzioni esportate in lib/",
+      "description": "As a developer, I want all public lib functions to have JSDoc comments explaining parameters, return value, and any non-obvious behavior.",
+      "acceptanceCriteria": [
+        "lib/config.ts: JSDoc per getValuationConfig() (menziona cache 5min + fallback default) e getPricePerSqm()",
+        "lib/streets/index.ts: JSDoc per extractStreetName(), extractCivicNumber(), getPriceForStreet() (menziona priorità lookup: civico > via > seed default > globalDefault, e cache 5min)",
+        "lib/excel.ts: JSDoc per generateValuationExcel() con descrizione dei campi ExcelValuationData",
+        "lib/email.ts: JSDoc per sendForm1Email(), sendForm2Email(), sendAdminNotification() (menziona fire-and-forget e variabile env RESEND_FROM_EMAIL)",
+        "lib/cities.ts: JSDoc per cityToSlug()",
+        "Commenti brevi (1-3 righe), solo il WHY/comportamento non ovvio. Non descrivere cosa fa il codice se si legge già dai nomi",
+        "Typecheck passes"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Creare README.md con documentazione progetto e API",
+      "description": "As a developer or admin, I want a README.md that explains how to set up and use the application.",
+      "acceptanceCriteria": [
+        "Creare README.md nella root del progetto con le sezioni: ## Overview (cosa fa l'app, stack tecnologico), ## Setup (prerequisiti: Node 18+, env vars richieste con descrizione), ## Sviluppo (npm install, npm run dev), ## Architettura (descrizione breve MVC: lib/ = Model, components/*View.tsx = View, components/ = Controller, app/api/ = API routes), ## Flusso utente (Step 1 → Step 2 → risultato), ## Pannello Admin (URL /admin/config, /admin/files, /admin/streets con descrizione, credenziali da env), ## API Reference (tabella con: metodo, path, auth, descrizione per tutti gli endpoint: POST /api/form-1, POST /api/form-2, GET/POST /api/admin/config, GET/DELETE /api/admin/files, GET/POST /api/admin/streets, GET /api/admin/streets/template, POST /api/admin/streets/import), ## Comuni supportati (lista con prezzi default), ## Deploy (Vercel, env vars su dashboard)",
+        "Lunghezza target: 150-250 righe. Lingua: italiano",
+        "Nessun typecheck necessario per un file .md"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": "Ultimo story — da completare dopo che tutti gli altri sono stabili"
+    }
+  ]
+}

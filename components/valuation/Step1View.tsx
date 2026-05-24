@@ -11,14 +11,7 @@ import {
   PrimaryButton,
   tokens,
 } from './shared';
-
-const ALLOWED_CITIES = [
-  'Milano',
-  'Monza',
-  'Sesto San Giovanni',
-  'Cinisello Balsamo',
-  'Locate di Triulzi',
-];
+import { ALLOWED_CITIES } from '@/lib/cities';
 
 export interface Step1FormValues {
   firstName: string;

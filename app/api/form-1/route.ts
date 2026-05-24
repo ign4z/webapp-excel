@@ -3,6 +3,7 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { getValuationConfig, getPricePerSqm } from '@/lib/config';
 import { sendForm1Email } from '@/lib/email';
+import { ALLOWED_CITIES } from '@/lib/cities';
 
 /* ==========================
    SCHEMA
@@ -17,17 +18,6 @@ const formSchema = z.object({
   squareMeters: z.number().min(10),
   recaptchaToken: z.string(),
 });
-
-/* ==========================
-   CONFIG
-========================== */
-const ALLOWED_CITIES = [
-  'Milano',
-  'Monza',
-  'Sesto San Giovanni',
-  'Cinisello Balsamo',
-  'Locate di Triulzi',
-];
 
 /* ==========================
    ROUTE
@@ -66,8 +56,7 @@ export async function POST(req: NextRequest) {
     if (!cityAllowed) {
       return NextResponse.json(
         {
-          error:
-            'Servizio disponibile solo nei comuni di Milano, Monza, Sesto San Giovanni, Cinisello Balsamo e Locate di Triulzi.',
+          error: `Servizio disponibile solo nei comuni di ${ALLOWED_CITIES.join(', ')}.`,
         },
         { status: 400 }
       );
