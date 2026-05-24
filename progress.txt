@@ -1,0 +1,19 @@
+## Codebase Patterns
+- ExcelJS writeBuffer() requires `as unknown as Promise<Buffer>` cast to satisfy strict TypeScript generics
+- Admin pages always gate on token URL param — show "Accesso Negato" if missing, same pattern across all admin pages
+- Email functions use RESEND_FROM_EMAIL env var with fallback 'onboarding@resend.dev'; fire-and-forget with .catch() in routes
+- Blob paths: config at 'config/valuation-parameters.json', streets at 'streets/<city-slug>.json'
+- City slug: lowercase with hyphens (e.g. 'locate-di-triulzi') — use cityToSlug() from @/lib/cities
+- ALLOWED_CITIES is the canonical city list in lib/cities.ts — import from there, never redeclare locally
+
+---
+
+## 2026-05-24 - US-001
+- Created `lib/cities.ts` with `ALLOWED_CITIES` (7 new municipalities: Locate di Triulzi, Fizzonasco, Opera, Pieve Emanuele, Tolcinasco, Siziano, Carpiano) and `cityToSlug()` function
+- Updated `components/valuation/Step1View.tsx`: removed local ALLOWED_CITIES, imported from @/lib/cities
+- Updated `app/api/form-1/route.ts`: removed local ALLOWED_CITIES, imported from @/lib/cities, updated error message to use ALLOWED_CITIES.join(', ')
+- Branch: ralph/v2-municipalities-mvc (created from master)
+- **Learnings for future iterations:**
+  - lib/streets/index.ts and app/api/admin/streets/route.ts do not exist on master — they'll be created in later stories and should import from @/lib/cities directly
+  - The old cities (Milano, Monza, Sesto San Giovanni, Cinisello Balsamo) are replaced by the 7 new south-Milan municipalities
+---
