@@ -10,7 +10,7 @@ function getResendClient() {
 }
 
 /**
- * Invia email dopo Form 1 con la stima preliminare
+ * Invia email dopo Form 1 con la stima preliminare. Richiede RESEND_API_KEY; se assente, restituisce errore senza eccezione.
  */
 export async function sendForm1Email(params: {
   email: string;
@@ -105,7 +105,7 @@ export async function sendForm1Email(params: {
 }
 
 /**
- * Invia email dopo Form 2 (conferma ordine)
+ * Invia email di conferma ordine dopo Form 2. Richiede RESEND_API_KEY.
  */
 export async function sendForm2Email(
   email: string,
@@ -183,7 +183,8 @@ export async function sendForm2Email(
 }
 
 /**
- * Invia email di notifica all'admin
+ * Notifica l'admin di un nuovo ordine. Fire-and-forget: non restituisce dati, le eccezioni vengono solo loggato.
+ * Destinatario letto da ADMIN_EMAIL (fallback: admin@tuodominio.com). Richiede RESEND_API_KEY.
  */
 export async function sendAdminNotification(
   userEmail: string,

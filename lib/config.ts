@@ -52,6 +52,10 @@ let cachedConfig: ValuationConfig | null = null;
 let cacheExpiry = 0;
 const CACHE_TTL = 1000 * 60 * 5; // 5 minuti
 
+/**
+ * Loads valuation config from Vercel Blob; falls back to defaultConfig if blob is missing or fetch fails.
+ * Results are cached in-memory for 5 minutes to avoid redundant blob reads.
+ */
 export async function getValuationConfig(): Promise<ValuationConfig> {
   // Serve cache valida
   if (cachedConfig && Date.now() < cacheExpiry) {
@@ -88,7 +92,7 @@ export async function getValuationConfig(): Promise<ValuationConfig> {
   }
 }
 
-/* ─── Helper per ottenere il prezzo/mq per una città specifica ─── */
+/** Returns the price/mq for a city, falling back to pricePerSqmDefault if the city is not in the map. */
 export function getPricePerSqm(config: ValuationConfig, city: string): number {
   return config.pricePerSqmByCity[city] ?? config.pricePerSqmDefault;
 }
