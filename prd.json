@@ -1,7 +1,7 @@
 {
   "project": "Webapp Valutazione Immobiliare",
-  "branchName": "ralph/v2-municipalities-mvc",
-  "description": "Fase 2: nuovi comuni zona sud Milano, prezzo per civico, import/export Excel strade, pattern MVC admin, hardening sicurezza, JSDoc, README, ottimizzazione",
+  "branchName": "ralph/v3-coefficienti",
+  "description": "Fase 3: formula valutazione moltiplicativa con coefficienti per tipologia, piano, locali, bagni, stato, classe energetica, anno costruzione e accessori. Spostamento piano in pagina 1, nuovi campi pagina 1 e 2, admin editabile.",
   "userStories": [
     {
       "id": "US-001",
@@ -39,7 +39,7 @@
       "description": "As a developer, I need street-level price seed data for Opera to enable granular pricing.",
       "acceptanceCriteria": [
         "Creare lib/streets/opera.ts",
-        "Esportare streetPrices: Record<string, number> con almeno 20 vie di Opera (chiavi lowercase). Esempi realistici: 'via roma' 2050, 'via milano' 2000, 'via kennedy' 1980, 'via mazzini' 1950, 'via garibaldi' 1950, 'piazza della chiesa' 2000, 'via delle industrie' 1750, 'via dei platani' 1900, 'via risorgimento' 1920, 'via xxv aprile' 1930, 'via don minzoni' 1880, 'via cavour' 1950, 'via trento' 1900, 'via trieste' 1890, 'via dante' 1920, 'via leopardi' 1900, 'via montegrappa' 1880, 'via dei fiori' 1870, 'via cascina' 1800, 'via dei campi' 1780",
+        "Esportare streetPrices: Record<string, number> con almeno 20 vie di Opera (chiavi lowercase)",
         "Esportare defaultPrice = 1900",
         "Typecheck passes"
       ],
@@ -53,7 +53,7 @@
       "description": "As a developer, I need street-level price seed data for Pieve Emanuele.",
       "acceptanceCriteria": [
         "Creare lib/streets/pieve-emanuele.ts",
-        "Esportare streetPrices: Record<string, number> con almeno 20 vie di Pieve Emanuele (chiavi lowercase). Esempi: 'via roma' 2000, 'via kennedy' 1930, 'via mazzini' 1900, 'via garibaldi' 1900, 'via delle primule' 1880, 'via del sole' 1870, 'via cavour' 1900, 'piazza municipio' 1950, 'via trento' 1850, 'via trieste' 1840, 'via dante' 1870, 'via leopardi' 1860, 'via torino' 1850, 'via delle industrie' 1700, 'via dei platani' 1850, 'via risorgimento' 1880, 'via don bosco' 1860, 'via xxv aprile' 1870, 'via dei campi' 1780, 'via cascina' 1750",
+        "Esportare streetPrices: Record<string, number> con almeno 20 vie (chiavi lowercase)",
         "Esportare defaultPrice = 1850",
         "Typecheck passes"
       ],
@@ -67,7 +67,7 @@
       "description": "As a developer, I need street-level price seed data for Fizzonasco.",
       "acceptanceCriteria": [
         "Creare lib/streets/fizzonasco.ts",
-        "Esportare streetPrices: Record<string, number> con almeno 15 vie di Fizzonasco (piccolo borgo, meno vie). Esempi: 'via roma' 1850, 'via mazzini' 1800, 'via garibaldi' 1800, 'via kennedy' 1780, 'via della chiesa' 1820, 'piazza municipio' 1830, 'via dei campi' 1700, 'via cascina' 1700, 'via delle rogge' 1750, 'via del bosco' 1720, 'via torino' 1750, 'via trieste' 1760, 'via risorgimento' 1780, 'via xxv aprile' 1780, 'via dante' 1760",
+        "Esportare streetPrices: Record<string, number> con almeno 15 vie (chiavi lowercase)",
         "Esportare defaultPrice = 1750",
         "Typecheck passes"
       ],
@@ -81,8 +81,7 @@
       "description": "As a developer, I need street-level price seed data for Tolcinasco.",
       "acceptanceCriteria": [
         "Creare lib/streets/tolcinasco.ts",
-        "Esportare streetPrices: Record<string, number> con almeno 12 vie di Tolcinasco (borgo molto piccolo). Esempi: 'via roma' 1750, 'via mazzini' 1700, 'via della chiesa' 1730, 'via dei campi' 1650, 'via cascina' 1650, 'via delle rogge' 1680, 'via del bosco' 1650, 'via risorgimento' 1700, 'via xxv aprile' 1700, 'via garibaldi' 1710, 'via kennedy' 1680, 'via dante' 1700",
-        "Esportare defaultPrice = 1650",
+        "Esportare streetPrices con almeno 12 vie, defaultPrice = 1650",
         "Typecheck passes"
       ],
       "priority": 6,
@@ -94,9 +93,7 @@
       "title": "Seed strade per Siziano",
       "description": "As a developer, I need street-level price seed data for Siziano.",
       "acceptanceCriteria": [
-        "Creare lib/streets/siziano.ts",
-        "Esportare streetPrices: Record<string, number> con almeno 18 vie di Siziano. Esempi: 'via roma' 1800, 'via kennedy' 1750, 'via mazzini' 1750, 'via garibaldi' 1760, 'piazza della vittoria' 1810, 'via cavour' 1760, 'via dante' 1750, 'via leopardi' 1730, 'via xxv aprile' 1750, 'via risorgimento' 1740, 'via dei campi' 1680, 'via cascina' 1680, 'via della roggia' 1700, 'via del mulino' 1700, 'via torino' 1720, 'via trieste' 1720, 'via trento' 1700, 'via delle industrie' 1600",
-        "Esportare defaultPrice = 1700",
+        "Creare lib/streets/siziano.ts con almeno 18 vie, defaultPrice = 1700",
         "Typecheck passes"
       ],
       "priority": 7,
@@ -108,9 +105,7 @@
       "title": "Seed strade per Carpiano",
       "description": "As a developer, I need street-level price seed data for Carpiano.",
       "acceptanceCriteria": [
-        "Creare lib/streets/carpiano.ts",
-        "Esportare streetPrices: Record<string, number> con almeno 15 vie di Carpiano. Esempi: 'via roma' 1700, 'via kennedy' 1650, 'via mazzini' 1650, 'via garibaldi' 1660, 'piazza municipio' 1700, 'via cavour' 1660, 'via dante' 1650, 'via xxv aprile' 1640, 'via risorgimento' 1640, 'via dei campi' 1600, 'via cascina' 1600, 'via della roggia' 1620, 'via del mulino' 1620, 'via torino' 1630, 'via delle industrie' 1550",
-        "Esportare defaultPrice = 1600",
+        "Creare lib/streets/carpiano.ts con almeno 15 vie, defaultPrice = 1600",
         "Typecheck passes"
       ],
       "priority": 8,
@@ -122,109 +117,93 @@
       "title": "Aggiornare SEED_MAP in lib/streets/index.ts per tutti i comuni",
       "description": "As a developer, I need the street lookup system to include all new municipalities in its seed map.",
       "acceptanceCriteria": [
-        "In lib/streets/index.ts: importare i seed di tutti i nuovi comuni (opera, pieve-emanuele, fizzonasco, tolcinasco, siziano, carpiano) e aggiungerli a SEED_MAP con le chiavi slug corrispondenti (es. 'opera', 'pieve-emanuele', 'fizzonasco', 'tolcinasco', 'siziano', 'carpiano')",
+        "In lib/streets/index.ts: importare i seed di tutti i nuovi comuni e aggiungerli a SEED_MAP",
         "La funzione getPriceForStreet deve funzionare correttamente per tutti i 7 comuni",
         "Typecheck passes"
       ],
       "priority": 9,
       "passes": true,
-      "notes": "Da eseguire dopo US-003..US-008"
+      "notes": ""
     },
     {
       "id": "US-010",
       "title": "Endpoint GET /api/admin/streets/template - download template Excel",
-      "description": "As an admin, I want to download the current street prices as an Excel file so I can edit them offline and re-import.",
+      "description": "As an admin, I want to download the current street prices as an Excel file.",
       "acceptanceCriteria": [
-        "Creare app/api/admin/streets/template/route.ts",
-        "GET /api/admin/streets/template?token=SECRET&city=locate-di-triulzi: verifica token. Carica dati strade dalla city (stesso meccanismo GET /api/admin/streets). Genera file .xlsx con ExcelJS: riga 1 = intestazioni ('Via', 'Prezzo al mq'), righe successive = dati ordinati per chiave. Restituisce il file con Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet e Content-Disposition: attachment; filename='strade-<city>.xlsx'",
-        "I file con chiavi civic ('via roma:15') vengono esclusi dal template (solo chiavi street senza ':')",
-        "Se la city non è supportata, restituire 400",
+        "Creare app/api/admin/streets/template/route.ts con GET endpoint",
         "Typecheck passes"
       ],
       "priority": 10,
       "passes": true,
-      "notes": "Usa ExcelJS già in dipendenze. Buffer -> NextResponse con headers custom"
+      "notes": ""
     },
     {
       "id": "US-011",
       "title": "Endpoint POST /api/admin/streets/import - import Excel batch strade",
-      "description": "As an admin, I want to upload an Excel file to bulk-update street prices for a city.",
+      "description": "As an admin, I want to upload an Excel file to bulk-update street prices.",
       "acceptanceCriteria": [
-        "Creare app/api/admin/streets/import/route.ts",
-        "POST /api/admin/streets/import?token=SECRET&city=locate-di-triulzi: accetta multipart/form-data con campo 'file' (.xlsx). Verifica token e city. Parsea il file con ExcelJS: legge tutte le righe dalla seconda in poi (prima = header), colonna A = nome via (string), colonna B = prezzo (number). Normalizza le chiavi (lowercase + trim). Valida: scarta righe con via vuota o prezzo non numerico/negativo. Salva su Blob con PUT (allowOverwrite: true), MERGENDO con i civici esistenti (non sovrascrive le chiavi civic 'via:N'). Restituisce { success: true, imported: number, skipped: number, errors: string[] }",
-        "Max 1000 righe per file. Se superato, restituire 400",
+        "Creare app/api/admin/streets/import/route.ts con POST endpoint",
         "Typecheck passes"
       ],
       "priority": 11,
       "passes": true,
-      "notes": "Leggere blob esistente prima del put per preservare i prezzi civico (chiavi con ':')"
+      "notes": ""
     },
     {
       "id": "US-012",
       "title": "UI bottoni import/export Excel in StreetsEditor",
-      "description": "As an admin, I want import/export buttons in the streets editor UI for batch operations.",
+      "description": "As an admin, I want import/export buttons in the streets editor UI.",
       "acceptanceCriteria": [
-        "In components/admin/StreetsEditor.tsx: aggiungere pulsante 'Scarica template' che fa GET /api/admin/streets/template?token=...&city=... e triggera download del file .xlsx (usare fetch + blob URL + <a> click trick)",
-        "Aggiungere pulsante 'Importa da Excel' che apre un file picker (input type=file, accept=.xlsx) e su selezione fa POST a /api/admin/streets/import?token=...&city=... con FormData. Mostra feedback: 'Importate N vie' oppure messaggio errore",
-        "Dopo import riuscito, ricaricare i dati dalla API (chiamata GET /api/admin/streets) per aggiornare la tabella",
-        "I due pulsanti sono visibili sopra la tabella, design coerente con gli altri pulsanti admin",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "StreetsEditor ha pulsanti Scarica template e Importa da Excel",
+        "Typecheck passes"
       ],
       "priority": 12,
       "passes": true,
-      "notes": "Il token è in URL params già usati da StreetsEditor per le altre chiamate API"
+      "notes": ""
     },
     {
       "id": "US-013",
       "title": "Prezzo per civico - struttura dati e lookup",
-      "description": "As a developer, I need the pricing system to support civic-number-level prices with fallback to street level.",
+      "description": "As a developer, I need the pricing system to support civic-number-level prices.",
       "acceptanceCriteria": [
-        "In lib/streets/index.ts: aggiungere export function extractCivicNumber(formattedAddress: string): string | null — prende parts[1].trim() dall'indirizzo Google Maps (es. 'Via Roma, 15, 20085 Locate di Triulzi' -> '15'). Restituisce null se il segmento non è un numero puro",
-        "Aggiornare getPriceForStreet: dopo aver ottenuto la streetMap dal blob/seed, cercare prima la chiave '<streetName>:<civicNumber>' (se civicNumber != null), poi '<streetName>', poi seed.defaultPrice, poi globalDefault",
-        "Il formato blob rimane Record<string, number> — backward compatible. Le chiavi civic hanno il formato 'via roma:15'",
+        "lib/streets/index.ts supporta chiavi 'via roma:15' per prezzo civico",
         "Typecheck passes"
       ],
       "priority": 13,
       "passes": true,
-      "notes": "Non serve migrare dati esistenti — le chiavi civic sono opzionali, il fallback alla via funziona sempre"
+      "notes": ""
     },
     {
       "id": "US-014",
       "title": "Prezzo per civico - sezione admin in StreetsEditor",
-      "description": "As an admin, I want to manage civic-number-specific prices in the streets editor.",
+      "description": "As an admin, I want to manage civic-number-specific prices.",
       "acceptanceCriteria": [
-        "In components/admin/StreetsEditor.tsx: separare le righe in due sezioni in base alla chiave: 'Prezzi per via' (chiavi senza ':') e 'Prezzi per civico' (chiavi con ':', es. 'via roma:15')",
-        "Nella sezione 'Prezzi per civico': mostrare le righe come 'Via / Civico / Prezzo'. Aggiungere pulsante 'Aggiungi prezzo civico' che apre un form inline con: dropdown via (dalle vie già in lista), input testo civico, input prezzo",
-        "Il salvataggio (POST /api/admin/streets) unifica le due sezioni in un unico Record<string, number> con chiavi corrette",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "StreetsEditor separa righe per via e per civico",
+        "Typecheck passes"
       ],
       "priority": 14,
       "passes": true,
-      "notes": "Se non ci sono prezzi civico, la sezione può essere nascosta o mostrare 'Nessun prezzo civico'"
+      "notes": ""
     },
     {
       "id": "US-015",
       "title": "MVC admin - split ConfigEditor in View + Controller",
-      "description": "As a developer, I want ConfigEditor to follow the MVC pattern so rendering is decoupled from business logic.",
+      "description": "As a developer, I want ConfigEditor to follow the MVC pattern.",
       "acceptanceCriteria": [
-        "Creare components/admin/ConfigEditorView.tsx: componente React puro (no useState, no fetch) che riceve via props tutti i dati e le callback necessarie. Props: config (ValuationConfig), saving (boolean), message (string), onConfigChange (field, value) => void, onSave () => void, onReset () => void. Render identico all'attuale ConfigEditor",
-        "Riscrivere components/admin/ConfigEditor.tsx come controller: gestisce useState (config, saving, message), fa fetch GET/POST all'API, passa tutto come props a ConfigEditorView",
-        "Nessun cambiamento visivo. Typecheck passes"
+        "Creare ConfigEditorView.tsx puro, ConfigEditor.tsx come controller",
+        "Typecheck passes"
       ],
       "priority": 15,
       "passes": true,
-      "notes": "Container/presentational pattern. Stessa funzionalità, solo separazione responsabilità"
+      "notes": ""
     },
     {
       "id": "US-016",
       "title": "MVC admin - split FileTable in View + Controller",
       "description": "As a developer, I want FileTable to follow the MVC pattern.",
       "acceptanceCriteria": [
-        "Creare components/admin/FileTableView.tsx: componente puro che riceve props: files (array blob), loading (boolean), deletingUrl (string | null), onDelete (url: string) => void. Render identico all'attuale FileTable",
-        "Riscrivere components/admin/FileTable.tsx come controller: gestisce stato e logica delete, passa props a FileTableView",
-        "Nessun cambiamento visivo. Typecheck passes"
+        "Creare FileTableView.tsx puro, FileTable.tsx come controller",
+        "Typecheck passes"
       ],
       "priority": 16,
       "passes": true,
@@ -235,9 +214,8 @@
       "title": "MVC admin - split StreetsEditor in View + Controller",
       "description": "As a developer, I want StreetsEditor to follow the MVC pattern.",
       "acceptanceCriteria": [
-        "Creare components/admin/StreetsEditorView.tsx: componente puro che riceve props: city (string), cities (string[]), rows (array {key, value}), civicRows (array {street, civic, price}), loading (boolean), saving (boolean), message (string), e tutte le callback (onCityChange, onRowChange, onDeleteRow, onAddRow, onAddCivic, onDeleteCivic, onSave, onImport, onDownloadTemplate)",
-        "Riscrivere components/admin/StreetsEditor.tsx come controller: gestisce tutto lo stato e le chiamate API, passa props a StreetsEditorView",
-        "Nessun cambiamento visivo. Typecheck passes"
+        "Creare StreetsEditorView.tsx puro, StreetsEditor.tsx come controller",
+        "Typecheck passes"
       ],
       "priority": 17,
       "passes": true,
@@ -246,29 +224,21 @@
     {
       "id": "US-018",
       "title": "Security hardening - validazione e sanitizzazione API admin",
-      "description": "As a security engineer, I want the admin APIs to be hardened against malformed input and injection.",
+      "description": "As a security engineer, I want the admin APIs to be hardened against malformed input.",
       "acceptanceCriteria": [
-        "In app/api/admin/streets/route.ts POST: aggiungere validazione body — deve essere un oggetto (typeof === 'object', not array, not null). Max 1000 chiavi. Ogni chiave max 150 caratteri. Ogni valore deve essere un numero finito positivo (Number.isFinite && val > 0). Restituire 400 con dettaglio in caso di violazione",
-        "In app/api/admin/streets/route.ts GET e POST: validare che il parametro city corrisponda al pattern /^[a-z0-9-]+$/ (solo lowercase, numeri, trattini). Questo previene path traversal nel blob path 'streets/<city>.json'",
-        "In app/api/admin/config/route.ts POST: aggiungere validazione che il body contenga solo le chiavi del tipo ValuationConfig, che tutti i valori numerici siano finiti e nei range plausibili (prezzi 100-50000, percentuali -100-100). Restituire 400 se la validazione fallisce",
-        "In app/api/admin/streets/import/route.ts: limite dimensione file — rifiutare se Content-Length > 5MB. Usare arrayBuffer con timeout implicito di Next.js",
+        "Validazione body e parametri in tutti gli endpoint admin",
         "Typecheck passes"
       ],
       "priority": 18,
       "passes": true,
-      "notes": "Security story — nessun cambiamento visivo. Test con valori boundary"
+      "notes": ""
     },
     {
       "id": "US-019",
       "title": "JSDoc comments per tutte le funzioni esportate in lib/",
-      "description": "As a developer, I want all public lib functions to have JSDoc comments explaining parameters, return value, and any non-obvious behavior.",
+      "description": "As a developer, I want all public lib functions to have JSDoc comments.",
       "acceptanceCriteria": [
-        "lib/config.ts: JSDoc per getValuationConfig() (menziona cache 5min + fallback default) e getPricePerSqm()",
-        "lib/streets/index.ts: JSDoc per extractStreetName(), extractCivicNumber(), getPriceForStreet() (menziona priorità lookup: civico > via > seed default > globalDefault, e cache 5min)",
-        "lib/excel.ts: JSDoc per generateValuationExcel() con descrizione dei campi ExcelValuationData",
-        "lib/email.ts: JSDoc per sendForm1Email(), sendForm2Email(), sendAdminNotification() (menziona fire-and-forget e variabile env RESEND_FROM_EMAIL)",
-        "lib/cities.ts: JSDoc per cityToSlug()",
-        "Commenti brevi (1-3 righe), solo il WHY/comportamento non ovvio. Non descrivere cosa fa il codice se si legge già dai nomi",
+        "JSDoc in lib/config.ts, lib/streets/index.ts, lib/email.ts, lib/cities.ts",
         "Typecheck passes"
       ],
       "priority": 19,
@@ -278,15 +248,158 @@
     {
       "id": "US-020",
       "title": "Creare README.md con documentazione progetto e API",
-      "description": "As a developer or admin, I want a README.md that explains how to set up and use the application.",
+      "description": "As a developer, I want a README.md explaining setup and usage.",
       "acceptanceCriteria": [
-        "Creare README.md nella root del progetto con le sezioni: ## Overview (cosa fa l'app, stack tecnologico), ## Setup (prerequisiti: Node 18+, env vars richieste con descrizione), ## Sviluppo (npm install, npm run dev), ## Architettura (descrizione breve MVC: lib/ = Model, components/*View.tsx = View, components/ = Controller, app/api/ = API routes), ## Flusso utente (Step 1 → Step 2 → risultato), ## Pannello Admin (URL /admin/config, /admin/files, /admin/streets con descrizione, credenziali da env), ## API Reference (tabella con: metodo, path, auth, descrizione per tutti gli endpoint: POST /api/form-1, POST /api/form-2, GET/POST /api/admin/config, GET/DELETE /api/admin/files, GET/POST /api/admin/streets, GET /api/admin/streets/template, POST /api/admin/streets/import), ## Comuni supportati (lista con prezzi default), ## Deploy (Vercel, env vars su dashboard)",
-        "Lunghezza target: 150-250 righe. Lingua: italiano",
-        "Nessun typecheck necessario per un file .md"
+        "README.md nella root con sezioni Overview, Setup, Architettura, API Reference, Comuni supportati"
       ],
       "priority": 20,
       "passes": true,
-      "notes": "Ultimo story — da completare dopo che tutti gli altri sono stabili"
+      "notes": ""
+    },
+    {
+      "id": "US-101",
+      "title": "Config - Aggiungere tabelle coefficienti immobiliari in ValuationConfig",
+      "description": "As a developer, I want ValuationConfig to include typed multiplicative coefficient tables for all property characteristics so the new valuation formula has typed defaults editable by admin.",
+      "acceptanceCriteria": [
+        "In lib/config.ts definire e ESPORTARE i seguenti string union types: TipologiaCoefficientKey = 'appartamento' | 'openspaceLoft' | 'mansarda' | 'attico' | 'villettaSchiera' | 'villa' | 'rusticoCasale' | 'stabilePalazzo'; StatoCoefficientKey = 'daRistrutturare' | 'daRiattare' | 'abitabile' | 'buono' | 'ottimo' | 'ristrutturato' | 'nuovo'; ClasseEnergeticaKey = 'G' | 'F' | 'E' | 'D' | 'C' | 'B' | 'A1' | 'A2' | 'A3' | 'A4'; AnnoCostKey = 'prima1945' | 'dal1945al1960' | 'dal1961al1980' | 'dal1981al2000' | 'dal2001al2010' | 'dal2011al2020' | 'dal2021inPoi'; PianoSenzaAscensoreKey = 'interrato' | 'seminterrato' | 'pianoTerra' | 'rialzato' | 'piano1' | 'piano2' | 'piano3' | 'piano4' | 'piano5' | 'piano6Plus'; PianoConAscensoreKey = 'pianoTerra' | 'piano1' | 'piano2' | 'piano3' | 'piano4' | 'piano5' | 'piano6' | 'piano7' | 'piano8' | 'piano9' | 'piano10Plus'; PianoKey = PianoSenzaAscensoreKey | PianoConAscensoreKey (union deduplicata); LocaliKey = 'locale1' | 'locali2' | 'locali3' | 'locali4' | 'locali5' | 'locali6' | 'locali7Plus'; BagniKey = 'bagno1' | 'bagni2' | 'bagni3' | 'bagni4' | 'bagni5Plus'; AscensoreKey = 'no' | 'si'; TerrazzoKey = 'nessuno' | 'balcone' | 'balconiMultipli' | 'terrazzoAbitabile' | 'terrazzoPanoramico'; GiardinoKey = 'nessuno' | 'piccolo' | 'medio' | 'grande' | 'importante'; GarageKey = 'nessuno' | 'postoScoperto' | 'postoCoperto' | 'boxSingolo' | 'boxDoppio'; CantinaKey = 'no' | 'si'; RiscaldamentoKey = 'assente' | 'centralizzatoVecchio' | 'centralizzatoContabilizzato' | 'autonomo' | 'autonomoCondensazione' | 'pompaDiCalore' | 'impiantoRadiante'",
+        "In lib/config.ts definire e ESPORTARE l'interfaccia ValuationCoefficientTables con i campi: tipologia: Record<TipologiaCoefficientKey, number>; stato: Record<StatoCoefficientKey, number>; classeEnergetica: Record<ClasseEnergeticaKey, number>; annoCostruzione: Record<AnnoCostKey, number>; pianoSenzaAscensore: Record<PianoSenzaAscensoreKey, number>; pianoConAscensore: Record<PianoConAscensoreKey, number>; locali: Record<LocaliKey, number>; bagni: Record<BagniKey, number>; ascensore: Record<AscensoreKey, number>; terrazzo: Record<TerrazzoKey, number>; giardino: Record<GiardinoKey, number>; garage: Record<GarageKey, number>; cantina: Record<CantinaKey, number>; riscaldamento: Record<RiscaldamentoKey, number>",
+        "In lib/config.ts aggiungere il campo `coefficienti: ValuationCoefficientTables` all'interfaccia ValuationConfig (NON rimuovere i campi legacy come secondBathroomPct etc. — verranno rimossi in US-104)",
+        "Aggiornare lib/config.defaults.json aggiungendo la chiave `coefficienti` con tutti i valori di default: tipologia: {appartamento:1.00, openspaceLoft:1.10, mansarda:0.95, attico:1.25, villettaSchiera:1.10, villa:1.30, rusticoCasale:0.90, stabilePalazzo:1.15}; stato: {daRistrutturare:0.80, daRiattare:0.90, abitabile:0.95, buono:1.00, ottimo:1.08, ristrutturato:1.12, nuovo:1.20}; classeEnergetica: {G:0.88, F:0.92, E:0.96, D:1.00, C:1.04, B:1.08, A1:1.12, A2:1.15, A3:1.18, A4:1.22}; annoCostruzione: {prima1945:0.92, dal1945al1960:0.95, dal1961al1980:0.98, dal1981al2000:1.00, dal2001al2010:1.05, dal2011al2020:1.10, dal2021inPoi:1.15}; pianoSenzaAscensore: {interrato:0.60, seminterrato:0.75, pianoTerra:0.92, rialzato:0.96, piano1:1.00, piano2:1.03, piano3:1.05, piano4:1.04, piano5:1.00, piano6Plus:0.95}; pianoConAscensore: {pianoTerra:0.95, piano1:1.00, piano2:1.03, piano3:1.05, piano4:1.07, piano5:1.09, piano6:1.10, piano7:1.11, piano8:1.12, piano9:1.13, piano10Plus:1.15}; locali: {locale1:0.90, locali2:0.96, locali3:1.00, locali4:1.05, locali5:1.10, locali6:1.15, locali7Plus:1.20}; bagni: {bagno1:1.00, bagni2:1.08, bagni3:1.14, bagni4:1.18, bagni5Plus:1.20}; ascensore: {no:1.00, si:1.05}; terrazzo: {nessuno:1.00, balcone:1.03, balconiMultipli:1.05, terrazzoAbitabile:1.10, terrazzoPanoramico:1.15}; giardino: {nessuno:1.00, piccolo:1.05, medio:1.10, grande:1.15, importante:1.20}; garage: {nessuno:1.00, postoScoperto:1.03, postoCoperto:1.05, boxSingolo:1.08, boxDoppio:1.12}; cantina: {no:1.00, si:1.02}; riscaldamento: {assente:0.90, centralizzatoVecchio:0.97, centralizzatoContabilizzato:1.00, autonomo:1.03, autonomoCondensazione:1.05, pompaDiCalore:1.08, impiantoRadiante:1.10}",
+        "In lib/config.ts esportare la funzione helper `getCoefficienti(config: ValuationConfig): ValuationCoefficientTables` che restituisce config.coefficienti (usa i valori di defaultConfig.coefficienti come fallback se config.coefficienti è undefined)",
+        "Verificare che getValuationConfig() faccia deep merge del campo coefficienti (blob sovrascrive defaults per ogni sotto-chiave presente, non per intero oggetto coefficienti)",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Story fondazionale per v3 — tutti gli altri US v3 dipendono dai tipi definiti qui. NON rimuovere i campi legacy da ValuationConfig: verranno rimossi in US-104 quando il calcolo è migrato."
+    },
+    {
+      "id": "US-102",
+      "title": "Form1 - Aggiungere tipologia, piano (da Form2), locali, bagni",
+      "description": "As a user, I want to select property type, floor, rooms and bathrooms in Step 1 so these fundamental characteristics are captured upfront and contribute to the valuation.",
+      "acceptanceCriteria": [
+        "In components/valuation/Step1View.tsx aggiungere le interfacce/props necessarie per i 4 nuovi campi. Aggiungere il tipo Step1FormValues (o aggiornarlo se esiste) con i campi: tipologia: TipologiaCoefficientKey (required); piano: string (PianoKey, required, uno di: 'interrato','seminterrato','pianoTerra','rialzato','piano1','piano2','piano3','piano4','piano5','piano6','piano7','piano8','piano9','piano10Plus'); locali: LocaliKey (required); bagni: BagniKey (required). Importare i tipi da '@/lib/config'",
+        "In Step1View.tsx aggiungere 4 select nel form DOPO il campo superficie e PRIMA del pulsante submit: (1) Tipologia immobile con opzioni label→value: 'Appartamento'→'appartamento', 'Open Space / Loft'→'openspaceLoft', 'Mansarda'→'mansarda', 'Attico'→'attico', 'Villetta a schiera'→'villettaSchiera', 'Villa'→'villa', 'Rustico / Casale'→'rusticoCasale', 'Stabile / Palazzo'→'stabilePalazzo'; (2) Piano con opzioni: 'Interrato'→'interrato', 'Seminterrato'→'seminterrato', 'Piano Terra'→'pianoTerra', 'Rialzato'→'rialzato', '1° Piano'→'piano1', '2° Piano'→'piano2', '3° Piano'→'piano3', '4° Piano'→'piano4', '5° Piano'→'piano5', '6° Piano'→'piano6', '7° Piano'→'piano7', '8° Piano'→'piano8', '9° Piano'→'piano9', '10° Piano o superiore'→'piano10Plus'; (3) Numero locali con opzioni: '1 locale'→'locale1', '2 locali'→'locali2', '3 locali'→'locali3', '4 locali'→'locali4', '5 locali'→'locali5', '6 locali'→'locali6', '7 o più locali'→'locali7Plus'; (4) Numero bagni con opzioni: '1 bagno'→'bagno1', '2 bagni'→'bagni2', '3 bagni'→'bagni3', '4 bagni'→'bagni4', '5 o più bagni'→'bagni5Plus'. Tutti i campi sono required (nessun placeholder vuoto)",
+        "In components/forms/Form1.tsx aggiornare lo schema Zod per includere i 4 nuovi campi come required strings con .refine() o z.enum() appropriato. Aggiornare sessionStorage save per includere tipologia, piano, locali, bagni in form1Data. Assicurarsi che il restore da sessionStorage (useEffect on mount) ripopoli anche questi campi",
+        "In app/api/form-1/route.ts aggiornare lo schema Zod aggiungendo: tipologia: z.enum(['appartamento','openspaceLoft','mansarda','attico','villettaSchiera','villa','rusticoCasale','stabilePalazzo']); piano: z.enum(['interrato','seminterrato','pianoTerra','rialzato','piano1','piano2','piano3','piano4','piano5','piano6','piano7','piano8','piano9','piano10Plus']); locali: z.enum(['locale1','locali2','locali3','locali4','locali5','locali6','locali7Plus']); bagni: z.enum(['bagno1','bagni2','bagni3','bagni4','bagni5Plus']). La route li accetta ma non li usa per il calcolo (li include nel response body per comodità)",
+        "La card di riepilogo in Step1View (se esiste) NON mostrare ancora questi campi — li mostrerà Step2View nella sua summary card. Non modificare Step2View in questo story",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Piano viene aggiunto a Form1 con nome 'piano' (PianoKey string). Il vecchio campo 'floor' (number) rimane in Form2 tipizzato ma verrà rimosso in US-103. Non toccare Form2 o Step2View in questo story."
+    },
+    {
+      "id": "US-103",
+      "title": "Form2 - Aggiornare campi: stato, classe energetica, ascensore, terrazzo, giardino, garage, cantina, riscaldamento (anno costruzione come select)",
+      "description": "As a user, I want to specify detailed property characteristics in Step 2 using the new coefficient-based fields so the valuation is comprehensive and accurate.",
+      "acceptanceCriteria": [
+        "In components/valuation/Step2View.tsx RIMUOVERE completamente i campi/tipi legacy: floor (number), hasElevator (boolean), hasSecondBathroom (boolean), isRecentlyRenovated (boolean), exposure ('north'|'south'|'east'|'west'|'none'), buildYear (number opzionale). RIMUOVERE il tipo ValuationPercentages e DEFAULT_PCT. RIMUOVERE la prop che porta le percentuali da config (non più necessaria)",
+        "In Step2View.tsx definire il NUOVO Step2FormValues con: stato: StatoCoefficientKey; classeEnergetica: ClasseEnergeticaKey; annoCostruzione: AnnoCostKey; ascensore: AscensoreKey; terrazzo: TerrazzoKey; giardino: GiardinoKey; garage: GarageKey; cantina: CantinaKey; riscaldamento: RiscaldamentoKey; notes: string. Importare i tipi da '@/lib/config'",
+        "In Step2View.tsx aggiungere i seguenti select nel form con default values suggeriti (il campo di 'buono', 'D', 'dal1981al2000', 'no', 'nessuno', ecc. come punto di partenza): (1) Stato immobile — label→value: 'Da ristrutturare'→'daRistrutturare', 'Da riattare'→'daRiattare', 'Abitabile'→'abitabile', 'Buono'→'buono', 'Ottimo'→'ottimo', 'Ristrutturato'→'ristrutturato', 'Nuovo'→'nuovo'; (2) Classe energetica — G, F, E, D, C, B, A1, A2, A3, A4; (3) Anno di costruzione — 'Prima del 1945'→'prima1945', '1945-1960'→'dal1945al1960', '1961-1980'→'dal1961al1980', '1981-2000'→'dal1981al2000', '2001-2010'→'dal2001al2010', '2011-2020'→'dal2011al2020', '2021 o successivo'→'dal2021inPoi'; (4) Ascensore — 'No'→'no', 'Sì'→'si'; (5) Terrazzo / Balcone — 'Nessuno'→'nessuno', 'Balcone'→'balcone', 'Balconi multipli'→'balconiMultipli', 'Terrazzo abitabile'→'terrazzoAbitabile', 'Terrazzo panoramico'→'terrazzoPanoramico'; (6) Giardino — 'Nessuno'→'nessuno', 'Piccolo (<50 mq)'→'piccolo', 'Medio (50-150 mq)'→'medio', 'Grande (>150 mq)'→'grande', 'Giardino importante'→'importante'; (7) Garage / Box — 'Nessuno'→'nessuno', 'Posto auto scoperto'→'postoScoperto', 'Posto auto coperto'→'postoCoperto', 'Box singolo'→'boxSingolo', 'Box doppio'→'boxDoppio'; (8) Cantina — 'No'→'no', 'Sì'→'si'; (9) Riscaldamento — 'Assente'→'assente', 'Centralizzato (vecchio)'→'centralizzatoVecchio', 'Centralizzato contabilizzato'→'centralizzatoContabilizzato', 'Autonomo'→'autonomo', 'Autonomo a condensazione'→'autonomoCondensazione', 'Pompa di calore'→'pompaDiCalore', 'Impianto radiante/evoluto'→'impiantoRadiante'",
+        "La summary card in cima a Step2View deve mostrare anche i 4 campi di Form1 (tipologia, piano, locali, bagni) presi da form1Data. Se form1Data non ha questi campi (vecchie sessioni) mostrare '—' come fallback",
+        "In components/forms/Form2.tsx aggiornare il controller: rimuovere lettura di percentages da /api/config (non più necessaria in Form2 — i coefficienti vengono usati solo lato server in form-2 route). Aggiornare lo schema Zod locale in Form2.tsx per i nuovi campi con valori default sensati. Aggiornare il sessionStorage restore per i nuovi campi",
+        "Il campo notes rimane (stringa libera opzionale, max 500 caratteri)",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "NON aggiornare app/api/form-2/route.ts in questo story — verrà fatto in US-104. In questo story la route riceve ancora i vecchi campi e usa ancora la formula vecchia. Il disconnect è temporaneo e accettabile in sviluppo. Assicurarsi che tutti i campi rimossi da Step2FormValues siano rimossi anche da Form2.tsx."
+    },
+    {
+      "id": "US-104",
+      "title": "API form-2 - Formula moltiplicativa con coefficienti + schema aggiornato",
+      "description": "As a developer, I want app/api/form-2/route.ts to use the new multiplicative coefficient formula and accept all new form fields so the final valuation reflects all property characteristics accurately.",
+      "acceptanceCriteria": [
+        "In app/api/form-2/route.ts aggiornare lo schema Zod per i campi Form2 rimuovendo i vecchi (floor, hasElevator, hasSecondBathroom, exposure, buildYear, isRecentlyRenovated, heatingType) e aggiungendo i nuovi: stato: z.enum(['daRistrutturare','daRiattare','abitabile','buono','ottimo','ristrutturato','nuovo']); classeEnergetica: z.enum(['G','F','E','D','C','B','A1','A2','A3','A4']); annoCostruzione: z.enum(['prima1945','dal1945al1960','dal1961al1980','dal1981al2000','dal2001al2010','dal2011al2020','dal2021inPoi']); ascensore: z.enum(['no','si']); terrazzo: z.enum(['nessuno','balcone','balconiMultipli','terrazzoAbitabile','terrazzoPanoramico']); giardino: z.enum(['nessuno','piccolo','medio','grande','importante']); garage: z.enum(['nessuno','postoScoperto','postoCoperto','boxSingolo','boxDoppio']); cantina: z.enum(['no','si']); riscaldamento: z.enum(['assente','centralizzatoVecchio','centralizzatoContabilizzato','autonomo','autonomoCondensazione','pompaDiCalore','impiantoRadiante']); notes: z.string().max(500).optional()",
+        "Aggiornare lo schema Zod per form1Data in form-2/route.ts aggiungendo: tipologia: z.enum([...TipologiaCoefficientKey values...]).optional(); piano: z.enum([...all piano keys...]).optional(); locali: z.enum([...LocaliKey values...]).optional(); bagni: z.enum([...BagniKey values...]).optional(). Opzionali per retrocompatibilità con sessioni precedenti",
+        "Implementare la funzione `calcolaPianoCoeff(piano: string, ascensore: 'no'|'si', coefficienti: ValuationCoefficientTables): number` NELLA ROUTE: se ascensore='si' e piano è in pianoConAscensore (pianoTerra,piano1..piano9,piano10Plus) → usa coefficienti.pianoConAscensore[piano]; altrimenti → usa coefficienti.pianoSenzaAscensore con fallback: piano6/7/8/9 senza ascensore mappano a 'piano6Plus'. Default 1.00 se chiave non trovata",
+        "Implementare la NUOVA formula: const baseValue = form1Data.pricePerSqm * form1Data.squareMeters; const coeff = getCoefficienti(config); const coeffTipologia = coeff.tipologia[form1Data.tipologia] ?? 1.00; const coeffStato = coeff.stato[stato] ?? 1.00; const coeffClasseEn = coeff.classeEnergetica[classeEnergetica] ?? 1.00; const coeffAnno = coeff.annoCostruzione[annoCostruzione] ?? 1.00; const coeffPiano = calcolaPianoCoeff(form1Data.piano ?? 'piano1', ascensore, coeff); const coeffLocali = coeff.locali[form1Data.locali] ?? 1.00; const coeffBagni = coeff.bagni[form1Data.bagni] ?? 1.00; const coeffAscensore = coeff.ascensore[ascensore] ?? 1.00; const coeffTerrazzo = coeff.terrazzo[terrazzo] ?? 1.00; const coeffGiardino = coeff.giardino[giardino] ?? 1.00; const coeffGarage = coeff.garage[garage] ?? 1.00; const coeffCantina = coeff.cantina[cantina] ?? 1.00; const coeffRisc = coeff.riscaldamento[riscaldamento] ?? 1.00; const coeffTotale = coeffTipologia * coeffStato * coeffClasseEn * coeffAnno * coeffPiano * coeffLocali * coeffBagni * coeffAscensore * coeffTerrazzo * coeffGiardino * coeffGarage * coeffCantina * coeffRisc; const finalValue = Math.round(baseValue * coeffTotale)",
+        "Il campo `details` nella response deve includere un array di oggetti { label: string, coefficiente: number } per ogni fattore: es. {label: 'Tipologia: Appartamento', coefficiente: 1.00}, {label: 'Stato: Buono', coefficiente: 1.00}, ..., {label: 'Coefficiente totale', coefficiente: coeffTotale}. Includere anche baseValue e finalValue nella response",
+        "RIMUOVERE da lib/config.ts i campi legacy da ValuationConfig: secondBathroomPct, cellarPct, renovatedPct, floorGroundPct, floorTopPct, exposureNorthPct, exposureSouthPct, exposureEastPct, exposureWestPct, heatingAutonomousPct, heatingCentralizedPct, depreciationRatePerYear. Aggiornare lib/config.defaults.json rimuovendo le stesse chiavi legacy",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Questo story sostituisce completamente il sistema di calcolo. Se config.coefficienti è undefined (blob vecchio), getCoefficienti() deve restituire i defaults da config.defaults.json. La formula è pura moltiplicazione — nessun addizione percentuale. Il baseValue mostrato nel result screen è pricePerSqm * sqm (senza coefficienti); il finalValue è baseValue * coeffTotale."
+    },
+    {
+      "id": "US-105",
+      "title": "Admin ConfigEditor - Editing tabelle coefficienti immobiliari",
+      "description": "As an admin, I want to view and edit all coefficient tables in the admin panel so I can tune valuation parameters without touching code.",
+      "acceptanceCriteria": [
+        "In components/admin/ConfigEditorView.tsx aggiungere una nuova sezione 'Coefficienti Immobiliari' sotto la sezione prezzi esistente. La sezione deve contenere 14 sottosezioni (una per tabella coefficiente) ognuna con titolo (es. 'Tipologia Immobile'), descrizione breve del riferimento (es. 'Riferimento: Appartamento = 1,00'), e una lista di righe key→value editabili",
+        "Ogni riga coefficiente mostra: etichetta leggibile (es. 'Appartamento'), input number con step=0.01 min=0.01 max=5.00, valore attuale. Le etichette leggibili per ogni chiave sono: tipologia→{appartamento:'Appartamento', openspaceLoft:'Open Space / Loft', mansarda:'Mansarda', attico:'Attico', villettaSchiera:'Villetta a schiera', villa:'Villa', rusticoCasale:'Rustico / Casale', stabilePalazzo:'Stabile / Palazzo'}; stato→{daRistrutturare:'Da ristrutturare', daRiattare:'Da riattare', abitabile:'Abitabile', buono:'Buono', ottimo:'Ottimo', ristrutturato:'Ristrutturato', nuovo:'Nuovo'}; classeEnergetica→chiavi come label; annoCostruzione→{prima1945:'Prima del 1945', dal1945al1960:'1945-1960', dal1961al1980:'1961-1980', dal1981al2000:'1981-2000', dal2001al2010:'2001-2010', dal2011al2020:'2011-2020', dal2021inPoi:'2021+'}; pianoSenzaAscensore→{interrato:'Interrato', seminterrato:'Seminterrato', pianoTerra:'Piano Terra', rialzato:'Rialzato', piano1:'1° Piano', piano2:'2° Piano', piano3:'3° Piano', piano4:'4° Piano', piano5:'5° Piano', piano6Plus:'6° Piano e oltre'}; pianoConAscensore→{pianoTerra:'Piano Terra', piano1:'1° Piano', piano2:'2° Piano', piano3:'3° Piano', piano4:'4° Piano', piano5:'5° Piano', piano6:'6° Piano', piano7:'7° Piano', piano8:'8° Piano', piano9:'9° Piano', piano10Plus:'10° Piano e oltre'}; locali→{locale1:'1 locale', locali2:'2 locali', locali3:'3 locali', locali4:'4 locali', locali5:'5 locali', locali6:'6 locali', locali7Plus:'7+ locali'}; bagni→{bagno1:'1 bagno', bagni2:'2 bagni', bagni3:'3 bagni', bagni4:'4 bagni', bagni5Plus:'5+ bagni'}; ascensore→{no:'No', si:'Sì'}; terrazzo→{nessuno:'Nessuno', balcone:'Balcone', balconiMultipli:'Balconi multipli', terrazzoAbitabile:'Terrazzo abitabile', terrazzoPanoramico:'Terrazzo panoramico'}; giardino→{nessuno:'Nessuno', piccolo:'Piccolo (<50 mq)', medio:'Medio (50-150 mq)', grande:'Grande (>150 mq)', importante:'Giardino importante'}; garage→{nessuno:'Nessuno', postoScoperto:'Posto auto scoperto', postoCoperto:'Posto auto coperto', boxSingolo:'Box singolo', boxDoppio:'Box doppio'}; cantina→{no:'No', si:'Sì'}; riscaldamento→{assente:'Assente', centralizzatoVecchio:'Centralizzato (vecchio)', centralizzatoContabilizzato:'Centralizzato contabilizzato', autonomo:'Autonomo', autonomoCondensazione:'Autonomo a condensazione', pompaDiCalore:'Pompa di calore', impiantoRadiante:'Impianto radiante/evoluto'}",
+        "In components/admin/ConfigEditor.tsx (controller) aggiornare onConfigChange per gestire aggiornamenti nested del tipo 'coefficienti.tipologia.appartamento' → aggiornare il valore corrispondente nell'oggetto coefficienti. Usare path notation o una helper function per aggiornamenti nested",
+        "In app/api/admin/config/route.ts aggiornare la validazione POST: accettare il campo `coefficienti` come oggetto. Validare che ogni valore coefficiente sia un numero finito con 0.01 <= valore <= 5.00. Restituire 400 se la validazione fallisce con dettaglio dei campi errati",
+        "Il layout deve essere responsive e usare accordion o card collassabili per ogni sottosezione (14 accordion sections) per non sovraccaricare la pagina",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Usare il pattern esistente ConfigEditor/ConfigEditorView (MVC). La sezione coefficienti viene aggiunta DOPO le sezioni esistenti (prezzi per comune, prezzo default). Mantenere il bottone Reset che resetta anche i coefficienti ai defaults."
+    },
+    {
+      "id": "US-106",
+      "title": "Excel export - Aggiornare spreadsheet con nuovi campi e coefficienti",
+      "description": "As a user, I want the exported Excel file to include all the new property characteristics and show the coefficient breakdown so I have full documentation of the valuation.",
+      "acceptanceCriteria": [
+        "In app/api/form-2/route.ts aggiornare la sezione di generazione Excel (ExcelJS). La sezione 'Dati Immobile' deve includere le righe: Tipologia (label leggibile), Piano (label leggibile), Locali, Bagni (prese da form1Data); Stato immobile, Classe energetica, Anno di costruzione, Ascensore, Terrazzo/Balcone, Giardino, Garage, Cantina, Riscaldamento (dal form2 data). Rimuovere le righe legacy (Piano numero, Ascensore booleano, Secondo bagno, Cantina booleano, Esposizione, Ristrutturato, Anno costruzione numerico, Riscaldamento vecchio)",
+        "Aggiungere una sezione 'Coefficienti Applicati' nell'Excel con una riga per ogni coefficiente: colonna A = nome fattore (es. 'Tipologia'), colonna B = valore selezionato (label leggibile, es. 'Appartamento'), colonna C = coefficiente applicato (es. 1.00). Ultima riga: 'Coefficiente Totale', '', coeffTotale",
+        "La sezione 'Valutazione' deve mostrare: Valore base (prezzo/mq × superficie), Coefficiente totale, Valore stimato finale. Rimuovere il vecchio breakdown percentuale",
+        "Usare etichette leggibili italiane per tutti i valori enum (es. 'Nuovo' invece di 'nuovo', 'Pompa di calore' invece di 'pompaDiCalore'). Creare una mappa labels per ogni tipo key",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Le label leggibili per i valori enum devono essere definite come costanti nella route o in un file lib/labels.ts separato (non inline nell'Excel). Usare le stesse etichette usate nei form."
+    },
+    {
+      "id": "US-107",
+      "title": "Security hardening - Validazione e sanitizzazione nuovi campi enum",
+      "description": "As a security engineer, I want all new form fields to be strictly validated server-side so no unexpected values can corrupt the valuation or cause errors.",
+      "acceptanceCriteria": [
+        "Verificare che tutti i campi enum in app/api/form-1/route.ts (tipologia, piano, locali, bagni) usino z.enum() con array esplicito di valori ammessi — nessun z.string() generico. Se già fatto in US-102, documentare nel progress log",
+        "Verificare che tutti i campi enum in app/api/form-2/route.ts (stato, classeEnergetica, annoCostruzione, ascensore, terrazzo, giardino, garage, cantina, riscaldamento) usino z.enum() con valori espliciti. Se già fatto in US-104, documentare nel progress log",
+        "In app/api/admin/config/route.ts verificare che la validazione del campo `coefficienti` sia completa: per ogni sotto-chiave presente nel body, verificare che il valore sia Number.isFinite(v) && v >= 0.01 && v <= 5.00. Restituire errori dettagliati per campo (es. 'coefficienti.tipologia.appartamento: valore 99 fuori range [0.01, 5.00]')",
+        "Verificare che form-2/route.ts non usi i valori enum in template string o exec() — sono solo usati come chiavi di lookup in oggetti TypeScript, quindi safe. Documentare questa verifica nel progress log",
+        "Assicurarsi che i campi notes abbiano sanitizzazione (strip HTML o escape) oppure che siano stored/displayed in modo sicuro (non come innerHTML). Usare il metodo esistente se presente, altrimenti aggiungere .trim() e validazione maxLength",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Molte validazioni potrebbero già essere in posto dopo US-102 e US-104. Il goal di questo story è verificare la completezza e colmare eventuali gap. Non duplicare logica — solo gap-filling."
+    },
+    {
+      "id": "US-108",
+      "title": "Code quality - TypeScript strict, JSDoc helpers v3, cleanup",
+      "description": "As a developer, I want all new v3 code to be clean, well-typed, and documented so future maintenance is easy.",
+      "acceptanceCriteria": [
+        "In lib/config.ts aggiungere JSDoc alle nuove funzioni e tipi esportati: ValuationCoefficientTables (descrizione one-liner), getCoefficienti() (menziona fallback a defaults), tutti i nuovi string union types (una riga che elenca il numero di opzioni e il range di valori tipici)",
+        "Verificare che non esistano utilizzi di `any` nelle aree v3 (form-1/route.ts, form-2/route.ts, Form1.tsx, Form2.tsx, Step1View.tsx, Step2View.tsx, ConfigEditorView.tsx). Se trovati, sostituire con il tipo corretto",
+        "Assicurarsi che la funzione calcolaPianoCoeff (o equivalente) in form-2/route.ts sia una funzione pura esportata o definita a livello di modulo (non inline nel handler) per leggibilità",
+        "Verificare che le etichette leggibili (labels map per enum → stringa italiana) siano definite una volta sola e importate/riutilizzate dove necessario (form UI, Excel export). Se sono duplicate, consolidarle in lib/labels.ts o simile",
+        "Rimuovere qualsiasi dead code introdotto durante la migrazione v2→v3: vecchie props non più usate, tipi non referenziati, import inutilizzati. Usare typecheck per identificarli",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Story di cleanup — non aggiungere nuove funzionalità. Priorità: correttezza dei tipi > eliminazione any > consolidamento labels > JSDoc."
+    },
+    {
+      "id": "US-109",
+      "title": "README - Aggiornare documentazione con formula coefficienti v3",
+      "description": "As a developer or admin, I want the README to document the new v3 valuation formula and coefficient tables so anyone can understand how values are calculated.",
+      "acceptanceCriteria": [
+        "Aggiornare README.md: nella sezione Flusso utente aggiornare Step 1 per includere i nuovi campi (tipologia, piano, locali, bagni) e Step 2 per i nuovi campi (stato, classe energetica, anno costruzione, ascensore, terrazzo, giardino, garage, cantina, riscaldamento)",
+        "Aggiungere sezione '## Formula di Valutazione' che spiega: Valore Stimato = Prezzo €/mq × Superficie × Coeff.Tipologia × Coeff.Stato × Coeff.ClasseEnergetica × Coeff.AnnoCostruzione × Coeff.Piano × Coeff.Locali × Coeff.Bagni × Coeff.Ascensore × Coeff.Terrazzo × Coeff.Giardino × Coeff.Garage × Coeff.Cantina × Coeff.Riscaldamento. Includere una tabella markdown con i valori di default per ogni coefficiente (condensata, non tutte le righe — bastano i valori riferimento)",
+        "Aggiornare la sezione Pannello Admin per menzionare la nuova sezione 'Coefficienti Immobiliari' in /admin/config",
+        "Aggiornare la sezione API Reference: POST /api/form-1 ora accetta tipologia/piano/locali/bagni; POST /api/form-2 ora accetta stato/classeEnergetica/annoCostruzione/ascensore/terrazzo/giardino/garage/cantina/riscaldamento e usa la formula moltiplicativa",
+        "Nessun typecheck necessario per .md"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Lingua: italiano. Aggiornare l'esistente README.md — non crearne uno nuovo."
     }
   ]
 }

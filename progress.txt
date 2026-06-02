@@ -5,7 +5,22 @@
 - Blob paths: config at 'config/valuation-parameters.json', streets at 'streets/<city-slug>.json'
 - City slug: lowercase with hyphens (e.g. 'locate-di-triulzi') — use cityToSlug() from @/lib/cities
 - ALLOWED_CITIES is the canonical city list in lib/cities.ts — import from there, never redeclare locally
+- ValuationCoefficientTables has no index signature — use `as unknown as Record<string, unknown>` for dynamic key access
+- admin/config/route.ts percentageFields Omit must exclude 'coefficienti' to avoid type error on numeric comparison
 
+---
+
+## 2026-06-02 - US-101
+- Added 15 exported string union types to lib/config.ts (TipologiaCoefficientKey, StatoCoefficientKey, ClasseEnergeticaKey, AnnoCostKey, PianoSenzaAscensoreKey, PianoConAscensoreKey, PianoKey, LocaliKey, BagniKey, AscensoreKey, TerrazzoKey, GiardinoKey, GarageKey, CantinaKey, RiscaldamentoKey)
+- Added ValuationCoefficientTables interface (14 coefficient tables) and added coefficienti field to ValuationConfig
+- Added getCoefficienti() helper and implemented per-table deep merge in getValuationConfig()
+- Updated lib/config.defaults.json with all 14 coefficient tables and their default values
+- Fixed app/api/admin/config/route.ts: added 'coefficienti' to allowedKeys, excluded from percentageFields Omit
+- Branch: ralph/v3-coefficienti (created from ralph/v2-municipalities-mvc)
+- **Learnings for future iterations:**
+  - ValuationCoefficientTables has no index signature — use `as unknown as Record<string, unknown>` for dynamic key loops
+  - admin/config/route.ts Omit for percentageFields must exclude non-numeric fields (coefficienti) to avoid type errors
+  - lib/config.defaults.json is cast `as ValuationConfig` — all new ValuationConfig fields need defaults in this file
 ---
 
 ## 2026-05-24 - US-001
