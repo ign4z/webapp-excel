@@ -9,38 +9,39 @@ import { toast } from '@/hooks/use-toast';
 import { Step2View, Step2FormValues } from '@/components/valuation/Step2View';
 
 const formSchema = z.object({
-  floor: z.number().optional(),
-  hasElevator: z.boolean().optional(),
-  hasSecondBathroom: z.boolean().optional(),
-  hasCellar: z.boolean().optional(),
-  exposure: z.enum(['north', 'south', 'east', 'west', 'none']).optional(),
-  heatingType: z.enum(['autonomous', 'centralized', 'none']).optional(),
-  buildYear: z.number().optional(),
-  isRecentlyRenovated: z.boolean().optional(),
-  notes: z.string().optional(),
+  stato: z.enum(['daRistrutturare', 'daRiattare', 'abitabile', 'buono', 'ottimo', 'ristrutturato', 'nuovo']),
+  classeEnergetica: z.enum(['G', 'F', 'E', 'D', 'C', 'B', 'A1', 'A2', 'A3', 'A4']),
+  annoCostruzione: z.enum(['prima1945', 'dal1945al1960', 'dal1961al1980', 'dal1981al2000', 'dal2001al2010', 'dal2011al2020', 'dal2021inPoi']),
+  ascensore: z.enum(['no', 'si']),
+  terrazzo: z.enum(['nessuno', 'balcone', 'balconiMultipli', 'terrazzoAbitabile', 'terrazzoPanoramico']),
+  giardino: z.enum(['nessuno', 'piccolo', 'medio', 'grande', 'importante']),
+  garage: z.enum(['nessuno', 'postoScoperto', 'postoCoperto', 'boxSingolo', 'boxDoppio']),
+  cantina: z.enum(['no', 'si']),
+  riscaldamento: z.enum(['assente', 'centralizzatoVecchio', 'centralizzatoContabilizzato', 'autonomo', 'autonomoCondensazione', 'pompaDiCalore', 'impiantoRadiante']),
+  notes: z.string().max(500).optional(),
 });
 
 export default function Form2Component() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const [form1Data, setForm1Data] = useState<any>(null);
-  const [calculationResult, setCalculationResult] = useState<any>(null);
+  const [form1Data, setForm1Data] = useState<unknown>(null);
+  const [calculationResult, setCalculationResult] = useState<unknown>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [finalResult, setFinalResult] = useState<any>(null);
-  const [excelUrl, setExcelUrl] = useState<string | null>(null);
+  const [finalResult, setFinalResult] = useState<unknown>(null);
 
   const form = useForm<Step2FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      floor: undefined,
-      hasElevator: false,
-      hasSecondBathroom: false,
-      hasCellar: false,
-      exposure: 'none',
-      heatingType: 'none',
-      buildYear: undefined,
-      isRecentlyRenovated: false,
+      stato: 'buono',
+      classeEnergetica: 'D',
+      annoCostruzione: 'dal1981al2000',
+      ascensore: 'no',
+      terrazzo: 'nessuno',
+      giardino: 'nessuno',
+      garage: 'nessuno',
+      cantina: 'no',
+      riscaldamento: 'centralizzatoContabilizzato',
       notes: '',
     },
   });
@@ -90,16 +91,16 @@ export default function Form2Component() {
       if (!response.ok) throw new Error(data.error || "Errore durante l'invio");
 
       setFinalResult(data.finalValuation);
-      setExcelUrl(data.excelUrl);
 
-      toast({ title: '✅ Valutazione Completata!', description: 'Ti abbiamo inviato una email con il report completo.' });
+      toast({ title: '✅ Valutazione Completata!', description: 'La tua valutazione è stata elaborata con successo.' });
 
       sessionStorage.removeItem('form1Data');
       sessionStorage.removeItem('form2Data');
       sessionStorage.removeItem('calculationResult');
       sessionStorage.removeItem('sessionToken');
-    } catch (error: any) {
-      toast({ title: 'Errore', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Errore sconosciuto';
+      toast({ title: 'Errore', description: message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -122,11 +123,10 @@ export default function Form2Component() {
   return (
     <Step2View
       form={form}
-      form1Data={form1Data}
-      calculationResult={calculationResult}
+      form1Data={form1Data as Parameters<typeof Step2View>[0]['form1Data']}
+      calculationResult={calculationResult as Parameters<typeof Step2View>[0]['calculationResult']}
       isLoading={isLoading}
-      finalResult={finalResult}
-      excelUrl={excelUrl}
+      finalResult={finalResult as Parameters<typeof Step2View>[0]['finalResult']}
       onSubmit={form.handleSubmit(onSubmit)}
       onBack={handleBack}
       onRecaptchaChange={setRecaptchaToken}
