@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-06-02 - US-107
+- Verified form-1/route.ts: all 4 new fields use z.enum() with explicit values (tipologia, piano, locali, bagni) ✅
+- Verified form-2/route.ts: all 9 fields use z.enum() (stato, classeEnergetica, annoCostruzione, ascensore, terrazzo, giardino, garage, cantina, riscaldamento) ✅
+- Verified admin/config/route.ts: coefficienti validation checks each value is Number.isFinite && 0.01..5.00 ✅
+- Verified enum values are only used as object lookup keys (not in template strings or exec) ✅
+- Added .trim() to notes z.string() schema in form-2/route.ts for whitespace sanitization
+- Notes displayed in Excel as plain text (not innerHTML) — safe against XSS ✅
+- Files: app/api/form-2/route.ts (minor)
+---
+
 ## 2026-06-02 - US-106
 - Excel export fully updated as part of US-104 implementation
 - DATI IMMOBILE includes all v3 fields with readable Italian labels

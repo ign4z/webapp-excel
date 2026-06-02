@@ -367,7 +367,7 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Molte validazioni potrebbero già essere in posto dopo US-102 e US-104. Il goal di questo story è verificare la completezza e colmare eventuali gap. Non duplicare logica — solo gap-filling."
     },
     {
