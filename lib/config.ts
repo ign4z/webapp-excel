@@ -160,18 +160,6 @@ export interface ValuationCoefficientTables {
 export type ValuationConfig = {
   pricePerSqmByCity: Record<string, number>;
   pricePerSqmDefault: number;
-  depreciation: number;
-  secondBathroom: number;
-  cellar: number;
-  renovated: number;
-  groundFloor: number;
-  topFloor: number;
-  exposureSouth: number;
-  exposureEast: number;
-  exposureWest: number;
-  exposureNorth: number;
-  heatingAutonomous: number;
-  heatingCentralized: number;
   coefficienti: ValuationCoefficientTables;
 };
 

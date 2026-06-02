@@ -46,12 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Reject unknown keys (only keys of ValuationConfig are allowed)
-    const allowedKeys = new Set<string>([
-      'pricePerSqmByCity', 'pricePerSqmDefault', 'depreciation', 'secondBathroom',
-      'cellar', 'renovated', 'groundFloor', 'topFloor', 'exposureSouth', 'exposureEast',
-      'exposureWest', 'exposureNorth', 'heatingAutonomous', 'heatingCentralized',
-      'coefficienti',
-    ]);
+    const allowedKeys = new Set<string>(['pricePerSqmByCity', 'pricePerSqmDefault', 'coefficienti']);
     for (const key of Object.keys(body)) {
       if (!allowedKeys.has(key)) {
         return NextResponse.json({ success: false, error: `Chiave non consentita: ${key}` }, { status: 400 });
@@ -71,23 +66,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate numeric percentage fields (plausible range: -100 to 100)
-    const percentageFields: (keyof Omit<ValuationConfig, 'pricePerSqmByCity' | 'pricePerSqmDefault' | 'depreciation' | 'coefficienti'>)[] = [
-      'secondBathroom', 'cellar', 'renovated', 'groundFloor', 'topFloor',
-      'exposureSouth', 'exposureEast', 'exposureWest', 'exposureNorth',
-      'heatingAutonomous', 'heatingCentralized',
-    ];
-    for (const field of percentageFields) {
-      const val = newConfig[field];
-      if (!Number.isFinite(val) || val < -100 || val > 100) {
-        return NextResponse.json({ success: false, error: `Valore non valido per ${field}: deve essere tra -100 e 100` }, { status: 400 });
-      }
-    }
     if (!Number.isFinite(newConfig.pricePerSqmDefault) || newConfig.pricePerSqmDefault < 100 || newConfig.pricePerSqmDefault > 50000) {
       return NextResponse.json({ success: false, error: 'pricePerSqmDefault deve essere tra 100 e 50000' }, { status: 400 });
     }
-    if (!Number.isFinite(newConfig.depreciation) || newConfig.depreciation < 0 || newConfig.depreciation > 100) {
-      return NextResponse.json({ success: false, error: 'depreciation deve essere tra 0 e 100' }, { status: 400 });
+
+    // Validate coefficienti: each sub-key value must be in [0.01, 5.00]
+    if (body.coefficienti && typeof body.coefficienti === 'object') {
+      const errors: string[] = [];
+      for (const [table, tableValues] of Object.entries(body.coefficienti as Record<string, unknown>)) {
+        if (typeof tableValues !== 'object' || tableValues === null) continue;
+        for (const [key, val] of Object.entries(tableValues as Record<string, unknown>)) {
+          if (typeof val !== 'number' || !Number.isFinite(val) || val < 0.01 || val > 5.00) {
+            errors.push(`coefficienti.${table}.${key}: valore ${val} fuori range [0.01, 5.00]`);
+          }
+        }
+      }
+      if (errors.length > 0) {
+        return NextResponse.json({ success: false, error: errors.join('; ') }, { status: 400 });
+      }
     }
 
     await put(CONFIG_PATH, JSON.stringify(newConfig, null, 2), {
