@@ -398,7 +398,7 @@
         "Nessun typecheck necessario per .md"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Lingua: italiano. Aggiornare l'esistente README.md — non crearne uno nuovo."
     }
   ]

@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-06-02 - US-109
+- Updated README.md Step 1 section to include tipologia/piano/locali/bagni fields
+- Updated README.md Step 2 section to list all 9 new coefficient-based fields
+- Added '## Formula di Valutazione' section with full multiplicative formula, reference table, and piano/ascensore note
+- Updated Pannello Admin section to mention 14 coefficient accordion sections
+- Updated API Reference: form-1 now accepts tipologia/piano/locali/bagni; form-2 uses multiplicative formula
+- Files: README.md
+---
+
 ## 2026-06-02 - US-108
 - Created lib/labels.ts as single source of truth for all 14 coefficient label maps (TIPOLOGIA_LABELS, STATO_LABELS, etc.)
 - Updated form-2/route.ts to import from lib/labels.ts (removed local L_* constants)
