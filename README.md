@@ -81,22 +81,60 @@ app/api/          API Routes — endpoint Next.js con validazione e autenticazio
 
 1. L'utente seleziona il comune dalla lista dei comuni supportati
 2. Inserisce l'indirizzo tramite autocomplete Google Maps
-3. Inserisce la superficie in mq e il proprio indirizzo email
-4. Il sistema calcola il prezzo/mq cercando: chiave civico (`via roma:15`) → chiave via (`via roma`) → default comune → fallback globale
-5. Viene inviata un'email con la stima preliminare e il link a Step 2
+3. Inserisce la superficie in mq
+4. Seleziona: **tipologia** (appartamento, attico, villa, ecc.), **piano**, **numero locali**, **numero bagni**
+5. Il sistema calcola il prezzo/mq cercando: chiave civico (`via roma:15`) → chiave via (`via roma`) → default comune → fallback globale
+6. Viene inviata un'email con la stima base (prezzo/mq × superficie) e il link a Step 2
 
 ### Step 2 — Valutazione definitiva
 
-1. L'utente inserisce le caratteristiche dell'immobile:
-   - Anno di costruzione (depreciation -0,3% per anno)
-   - Secondo bagno (+3%)
-   - Cantina (+3%)
-   - Esposizione (Sud +5%, Est +3%, Ovest +2%, Nord -3%)
-   - Piano terra (-5%) o ultimo piano (-3%)
-   - Riscaldamento autonomo (+5%) o centralizzato (-2%)
-   - Ristrutturato (+10%)
-2. Il sistema applica tutti gli aggiustamenti percentuali alla stima base
-3. Viene generato un report Excel e inviato via email
+1. L'utente inserisce le caratteristiche dettagliate dell'immobile:
+   - **Stato immobile** (da ristrutturare → nuovo)
+   - **Classe energetica** (G → A4)
+   - **Anno di costruzione** (7 fasce, da prima del 1945 a 2021+)
+   - **Ascensore** (sì/no)
+   - **Terrazzo/Balcone** (nessuno → panoramico)
+   - **Giardino** (nessuno → importante)
+   - **Garage/Box** (nessuno → box doppio)
+   - **Cantina** (sì/no)
+   - **Riscaldamento** (assente → impianto radiante)
+2. Il sistema applica la **formula moltiplicativa a coefficienti** (v3)
+3. Viene generato un report Excel con il dettaglio di ogni coefficiente applicato e inviato via email
+
+## Formula di Valutazione
+
+Il valore stimato è calcolato con una formula moltiplicativa a **13 coefficienti**:
+
+```
+Valore Stimato = Prezzo €/mq × Superficie
+              × Coeff.Tipologia × Coeff.Stato × Coeff.ClasseEnergetica
+              × Coeff.AnnoCostruzione × Coeff.Piano × Coeff.Locali × Coeff.Bagni
+              × Coeff.Ascensore × Coeff.Terrazzo × Coeff.Giardino
+              × Coeff.Garage × Coeff.Cantina × Coeff.Riscaldamento
+```
+
+Ogni coefficiente è un numero dove `1,00 = neutro`, `> 1,00 = premium`, `< 1,00 = sconto`.
+
+| Fattore | Riferimento (1,00) | Range tipico |
+|---|---|---|
+| Tipologia | Appartamento | 0,90–1,30 |
+| Stato | Buono | 0,80–1,20 |
+| Classe energetica | D | 0,88–1,22 |
+| Anno costruzione | 1981–2000 | 0,92–1,15 |
+| Piano (con ascensore) | 1° Piano | 0,95–1,15 |
+| Piano (senza ascensore) | 1° Piano | 0,60–1,05 |
+| Locali | 3 locali | 0,90–1,20 |
+| Bagni | 1 bagno | 1,00–1,20 |
+| Ascensore | No | 1,00–1,05 |
+| Terrazzo | Nessuno | 1,00–1,15 |
+| Giardino | Nessuno | 1,00–1,20 |
+| Garage | Nessuno | 1,00–1,12 |
+| Cantina | No | 1,00–1,02 |
+| Riscaldamento | Centralizzato contabilizzato | 0,90–1,10 |
+
+Tutti i valori sono configurabili dall'admin nella sezione **Coefficienti Immobiliari** di `/admin/config`.
+
+**Nota piano:** il coefficiente piano dipende dalla presenza dell'ascensore. Senza ascensore, i piani 6+ usano la voce `piano6Plus`. Con ascensore, ogni piano fino al 10° ha il proprio coefficiente.
 
 ## Pannello Admin
 
@@ -106,9 +144,11 @@ Tutte le route admin richiedono doppia autenticazione:
 
 | URL | Funzione |
 |---|---|
-| `/admin/config?token=...` | Editor parametri valutazione (prezzi €/mq per comune, aggiustamenti %) |
+| `/admin/config?token=...` | Editor prezzi €/mq per comune + **14 tabelle coefficienti immobiliari** |
 | `/admin/files?token=...` | Lista file su Vercel Blob con possibilità di eliminazione |
 | `/admin/streets?token=...` | Editor prezzi per via e per civico, import/export Excel batch |
+
+La sezione **Coefficienti Immobiliari** in `/admin/config` espone 14 accordion collassabili, uno per ogni tabella coefficiente. Ogni riga mostra l'etichetta leggibile e un input numerico (step 0,01, range 0,01–5,00).
 
 ### Gestione prezzi strade
 
@@ -122,8 +162,8 @@ L'editor strade (`/admin/streets`) permette di:
 
 | Metodo | Path | Auth | Descrizione |
 |---|---|---|---|
-| `POST` | `/api/form-1` | Nessuna | Salva dati Step 1, calcola stima, invia email preliminare |
-| `POST` | `/api/form-2` | Nessuna | Salva dati Step 2, calcola valutazione definitiva, genera Excel |
+| `POST` | `/api/form-1` | Nessuna | Salva dati Step 1 (inclusi tipologia/piano/locali/bagni), calcola stima base, invia email preliminare |
+| `POST` | `/api/form-2` | Nessuna | Salva dati Step 2, applica formula moltiplicativa a coefficienti, genera Excel con dettaglio coefficienti |
 | `GET` | `/api/admin/config` | Token + Basic | Legge configurazione corrente da Vercel Blob |
 | `POST` | `/api/admin/config` | Token + Basic | Aggiorna configurazione su Vercel Blob |
 | `GET` | `/api/admin/files` | Token + Basic | Lista file presenti su Vercel Blob |
