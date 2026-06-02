@@ -12,6 +12,10 @@ import {
   tokens,
 } from './shared';
 import { ALLOWED_CITIES } from '@/lib/cities';
+import type { TipologiaCoefficientKey, PianoKey, LocaliKey, BagniKey } from '@/lib/config';
+
+/** Piano keys selectable in the form (excludes 'piano6Plus' which is a server-side aggregation key) */
+export type PianoFormKey = Exclude<PianoKey, 'piano6Plus'>;
 
 export interface Step1FormValues {
   firstName: string;
@@ -21,6 +25,10 @@ export interface Step1FormValues {
   city: string;
   address: string;
   squareMeters: number;
+  tipologia: TipologiaCoefficientKey;
+  piano: PianoFormKey;
+  locali: LocaliKey;
+  bagni: BagniKey;
 }
 
 interface Step1ViewProps {
@@ -176,6 +184,61 @@ export function Step1View({
                   {...register('squareMeters', { valueAsNumber: true })}
                 />
               </FieldGroup>
+
+              <FieldGroup label="Tipologia immobile" error={errors.tipologia?.message}>
+                <select className="vl-select" {...register('tipologia')}>
+                  <option value="appartamento">Appartamento</option>
+                  <option value="openspaceLoft">Open Space / Loft</option>
+                  <option value="mansarda">Mansarda</option>
+                  <option value="attico">Attico</option>
+                  <option value="villettaSchiera">Villetta a schiera</option>
+                  <option value="villa">Villa</option>
+                  <option value="rusticoCasale">Rustico / Casale</option>
+                  <option value="stabilePalazzo">Stabile / Palazzo</option>
+                </select>
+              </FieldGroup>
+
+              <FieldGroup label="Piano" error={errors.piano?.message}>
+                <select className="vl-select" {...register('piano')}>
+                  <option value="interrato">Interrato</option>
+                  <option value="seminterrato">Seminterrato</option>
+                  <option value="pianoTerra">Piano Terra</option>
+                  <option value="rialzato">Rialzato</option>
+                  <option value="piano1">1° Piano</option>
+                  <option value="piano2">2° Piano</option>
+                  <option value="piano3">3° Piano</option>
+                  <option value="piano4">4° Piano</option>
+                  <option value="piano5">5° Piano</option>
+                  <option value="piano6">6° Piano</option>
+                  <option value="piano7">7° Piano</option>
+                  <option value="piano8">8° Piano</option>
+                  <option value="piano9">9° Piano</option>
+                  <option value="piano10Plus">10° Piano o superiore</option>
+                </select>
+              </FieldGroup>
+
+              <div className="two-col">
+                <FieldGroup label="Numero locali" error={errors.locali?.message}>
+                  <select className="vl-select" {...register('locali')}>
+                    <option value="locale1">1 locale</option>
+                    <option value="locali2">2 locali</option>
+                    <option value="locali3">3 locali</option>
+                    <option value="locali4">4 locali</option>
+                    <option value="locali5">5 locali</option>
+                    <option value="locali6">6 locali</option>
+                    <option value="locali7Plus">7 o più locali</option>
+                  </select>
+                </FieldGroup>
+                <FieldGroup label="Numero bagni" error={errors.bagni?.message}>
+                  <select className="vl-select" {...register('bagni')}>
+                    <option value="bagno1">1 bagno</option>
+                    <option value="bagni2">2 bagni</option>
+                    <option value="bagni3">3 bagni</option>
+                    <option value="bagni4">4 bagni</option>
+                    <option value="bagni5Plus">5 o più bagni</option>
+                  </select>
+                </FieldGroup>
+              </div>
             </div>
           </VLCard>
 
