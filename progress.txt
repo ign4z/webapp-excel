@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-06-02 - US-106
+- Excel export fully updated as part of US-104 implementation
+- DATI IMMOBILE includes all v3 fields with readable Italian labels
+- COEFFICIENTI APPLICATI section: 3 columns (fattore, valore, coefficiente)
+- VALUTAZIONE section: valore base, coefficiente totale, valore finale stimato
+- Label maps defined as constants at top of form-2/route.ts (L_TIPOLOGIA, L_STATO, etc.)
+- No new code changes needed — already complete
+---
+
 ## 2026-06-02 - US-105
 - Added 14 accordion sections to ConfigEditorView.tsx for all coefficient tables
 - Each accordion shows key→label rows with number inputs (step=0.01, min=0.01, max=5.00)
