@@ -383,7 +383,7 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Story di cleanup — non aggiungere nuove funzionalità. Priorità: correttezza dei tipi > eliminazione any > consolidamento labels > JSDoc."
     },
     {

@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-06-02 - US-108
+- Created lib/labels.ts as single source of truth for all 14 coefficient label maps (TIPOLOGIA_LABELS, STATO_LABELS, etc.)
+- Updated form-2/route.ts to import from lib/labels.ts (removed local L_* constants)
+- Updated Step2View.tsx to import from lib/labels.ts (removed local TIPOLOGIA_LABELS etc.)
+- Updated ConfigEditorView.tsx to import from lib/labels.ts (COEFF_SECTIONS now references imported maps)
+- All JSDoc already in place on lib/config.ts types from US-101
+- No `any` types in v3 files (verified via grep)
+- calcolaPianoCoeff is a module-level function in form-2/route.ts ✅
+- Files: lib/labels.ts (new), app/api/form-2/route.ts, components/valuation/Step2View.tsx, components/admin/ConfigEditorView.tsx
+- **Learnings for future iterations:**
+  - lib/labels.ts is the canonical source for all readable Italian labels — import from there in both client and server code
+---
+
 ## 2026-06-02 - US-107
 - Verified form-1/route.ts: all 4 new fields use z.enum() with explicit values (tipologia, piano, locali, bagni) ✅
 - Verified form-2/route.ts: all 9 fields use z.enum() (stato, classeEnergetica, annoCostruzione, ascensore, terrazzo, giardino, garage, cantina, riscaldamento) ✅
