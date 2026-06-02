@@ -3,6 +3,11 @@
 import { useState } from 'react';
 import { ALLOWED_CITIES } from '@/lib/cities';
 import type { ValuationConfig, ValuationCoefficientTables } from '@/lib/config';
+import {
+  TIPOLOGIA_LABELS, STATO_LABELS, CLASSE_ENERGETICA_LABELS, ANNO_COST_LABELS,
+  PIANO_LABELS, LOCALI_LABELS, BAGNI_LABELS, ASCENSORE_LABELS, TERRAZZO_LABELS,
+  GIARDINO_LABELS, GARAGE_LABELS, CANTINA_LABELS, RISCALDAMENTO_LABELS,
+} from '@/lib/labels';
 
 interface ConfigEditorViewProps {
   config: ValuationConfig;
@@ -26,128 +31,26 @@ type CoeffSection = {
 };
 
 const COEFF_SECTIONS: CoeffSection[] = [
+  { key: 'tipologia', title: 'Tipologia Immobile', ref: 'Riferimento: Appartamento = 1,00', labels: TIPOLOGIA_LABELS },
+  { key: 'stato', title: 'Stato Immobile', ref: 'Riferimento: Buono = 1,00', labels: STATO_LABELS },
+  { key: 'classeEnergetica', title: 'Classe Energetica', ref: 'Riferimento: D = 1,00', labels: CLASSE_ENERGETICA_LABELS },
+  { key: 'annoCostruzione', title: 'Anno di Costruzione', ref: 'Riferimento: 1981–2000 = 1,00', labels: ANNO_COST_LABELS },
   {
-    key: 'tipologia',
-    title: 'Tipologia Immobile',
-    ref: 'Riferimento: Appartamento = 1,00',
-    labels: {
-      appartamento: 'Appartamento', openspaceLoft: 'Open Space / Loft', mansarda: 'Mansarda',
-      attico: 'Attico', villettaSchiera: 'Villetta a schiera', villa: 'Villa',
-      rusticoCasale: 'Rustico / Casale', stabilePalazzo: 'Stabile / Palazzo',
-    },
+    key: 'pianoSenzaAscensore', title: 'Piano (Senza Ascensore)', ref: 'Riferimento: 1° Piano = 1,00',
+    labels: { interrato: PIANO_LABELS.interrato, seminterrato: PIANO_LABELS.seminterrato, pianoTerra: PIANO_LABELS.pianoTerra, rialzato: PIANO_LABELS.rialzato, piano1: PIANO_LABELS.piano1, piano2: PIANO_LABELS.piano2, piano3: PIANO_LABELS.piano3, piano4: PIANO_LABELS.piano4, piano5: PIANO_LABELS.piano5, piano6Plus: PIANO_LABELS.piano6Plus },
   },
   {
-    key: 'stato',
-    title: 'Stato Immobile',
-    ref: 'Riferimento: Buono = 1,00',
-    labels: {
-      daRistrutturare: 'Da ristrutturare', daRiattare: 'Da riattare', abitabile: 'Abitabile',
-      buono: 'Buono', ottimo: 'Ottimo', ristrutturato: 'Ristrutturato', nuovo: 'Nuovo',
-    },
+    key: 'pianoConAscensore', title: 'Piano (Con Ascensore)', ref: 'Riferimento: 1° Piano = 1,00',
+    labels: { pianoTerra: PIANO_LABELS.pianoTerra, piano1: PIANO_LABELS.piano1, piano2: PIANO_LABELS.piano2, piano3: PIANO_LABELS.piano3, piano4: PIANO_LABELS.piano4, piano5: PIANO_LABELS.piano5, piano6: PIANO_LABELS.piano6, piano7: PIANO_LABELS.piano7, piano8: PIANO_LABELS.piano8, piano9: PIANO_LABELS.piano9, piano10Plus: PIANO_LABELS.piano10Plus },
   },
-  {
-    key: 'classeEnergetica',
-    title: 'Classe Energetica',
-    ref: 'Riferimento: D = 1,00',
-    labels: { G: 'G', F: 'F', E: 'E', D: 'D', C: 'C', B: 'B', A1: 'A1', A2: 'A2', A3: 'A3', A4: 'A4' },
-  },
-  {
-    key: 'annoCostruzione',
-    title: 'Anno di Costruzione',
-    ref: 'Riferimento: 1981–2000 = 1,00',
-    labels: {
-      prima1945: 'Prima del 1945', dal1945al1960: '1945–1960', dal1961al1980: '1961–1980',
-      dal1981al2000: '1981–2000', dal2001al2010: '2001–2010', dal2011al2020: '2011–2020',
-      dal2021inPoi: '2021+',
-    },
-  },
-  {
-    key: 'pianoSenzaAscensore',
-    title: 'Piano (Senza Ascensore)',
-    ref: 'Riferimento: 1° Piano = 1,00',
-    labels: {
-      interrato: 'Interrato', seminterrato: 'Seminterrato', pianoTerra: 'Piano Terra',
-      rialzato: 'Rialzato', piano1: '1° Piano', piano2: '2° Piano', piano3: '3° Piano',
-      piano4: '4° Piano', piano5: '5° Piano', piano6Plus: '6° Piano e oltre',
-    },
-  },
-  {
-    key: 'pianoConAscensore',
-    title: 'Piano (Con Ascensore)',
-    ref: 'Riferimento: 1° Piano = 1,00',
-    labels: {
-      pianoTerra: 'Piano Terra', piano1: '1° Piano', piano2: '2° Piano', piano3: '3° Piano',
-      piano4: '4° Piano', piano5: '5° Piano', piano6: '6° Piano', piano7: '7° Piano',
-      piano8: '8° Piano', piano9: '9° Piano', piano10Plus: '10° Piano e oltre',
-    },
-  },
-  {
-    key: 'locali',
-    title: 'Numero Locali',
-    ref: 'Riferimento: 3 locali = 1,00',
-    labels: {
-      locale1: '1 locale', locali2: '2 locali', locali3: '3 locali', locali4: '4 locali',
-      locali5: '5 locali', locali6: '6 locali', locali7Plus: '7+ locali',
-    },
-  },
-  {
-    key: 'bagni',
-    title: 'Numero Bagni',
-    ref: 'Riferimento: 1 bagno = 1,00',
-    labels: {
-      bagno1: '1 bagno', bagni2: '2 bagni', bagni3: '3 bagni', bagni4: '4 bagni', bagni5Plus: '5+ bagni',
-    },
-  },
-  {
-    key: 'ascensore',
-    title: 'Ascensore',
-    ref: 'Riferimento: No = 1,00',
-    labels: { no: 'No', si: 'Sì' },
-  },
-  {
-    key: 'terrazzo',
-    title: 'Terrazzo / Balcone',
-    ref: 'Riferimento: Nessuno = 1,00',
-    labels: {
-      nessuno: 'Nessuno', balcone: 'Balcone', balconiMultipli: 'Balconi multipli',
-      terrazzoAbitabile: 'Terrazzo abitabile', terrazzoPanoramico: 'Terrazzo panoramico',
-    },
-  },
-  {
-    key: 'giardino',
-    title: 'Giardino',
-    ref: 'Riferimento: Nessuno = 1,00',
-    labels: {
-      nessuno: 'Nessuno', piccolo: 'Piccolo (<50 mq)', medio: 'Medio (50–150 mq)',
-      grande: 'Grande (>150 mq)', importante: 'Giardino importante',
-    },
-  },
-  {
-    key: 'garage',
-    title: 'Garage / Box',
-    ref: 'Riferimento: Nessuno = 1,00',
-    labels: {
-      nessuno: 'Nessuno', postoScoperto: 'Posto auto scoperto', postoCoperto: 'Posto auto coperto',
-      boxSingolo: 'Box singolo', boxDoppio: 'Box doppio',
-    },
-  },
-  {
-    key: 'cantina',
-    title: 'Cantina',
-    ref: 'Riferimento: No = 1,00',
-    labels: { no: 'No', si: 'Sì' },
-  },
-  {
-    key: 'riscaldamento',
-    title: 'Riscaldamento',
-    ref: 'Riferimento: Centralizzato contabilizzato = 1,00',
-    labels: {
-      assente: 'Assente', centralizzatoVecchio: 'Centralizzato (vecchio)',
-      centralizzatoContabilizzato: 'Centralizzato contabilizzato', autonomo: 'Autonomo',
-      autonomoCondensazione: 'Autonomo a condensazione', pompaDiCalore: 'Pompa di calore',
-      impiantoRadiante: 'Impianto radiante/evoluto',
-    },
-  },
+  { key: 'locali', title: 'Numero Locali', ref: 'Riferimento: 3 locali = 1,00', labels: LOCALI_LABELS },
+  { key: 'bagni', title: 'Numero Bagni', ref: 'Riferimento: 1 bagno = 1,00', labels: BAGNI_LABELS },
+  { key: 'ascensore', title: 'Ascensore', ref: 'Riferimento: No = 1,00', labels: ASCENSORE_LABELS },
+  { key: 'terrazzo', title: 'Terrazzo / Balcone', ref: 'Riferimento: Nessuno = 1,00', labels: TERRAZZO_LABELS },
+  { key: 'giardino', title: 'Giardino', ref: 'Riferimento: Nessuno = 1,00', labels: GIARDINO_LABELS },
+  { key: 'garage', title: 'Garage / Box', ref: 'Riferimento: Nessuno = 1,00', labels: GARAGE_LABELS },
+  { key: 'cantina', title: 'Cantina', ref: 'Riferimento: No = 1,00', labels: CANTINA_LABELS },
+  { key: 'riscaldamento', title: 'Riscaldamento', ref: 'Riferimento: Centralizzato contabilizzato = 1,00', labels: RISCALDAMENTO_LABELS },
 ];
 
 // ─── Accordion component ─────────────────────────────────────────────────────

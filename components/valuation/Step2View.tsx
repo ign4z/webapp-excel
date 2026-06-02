@@ -23,6 +23,12 @@ import type {
   CantinaKey,
   RiscaldamentoKey,
 } from '@/lib/config';
+import {
+  TIPOLOGIA_LABELS,
+  PIANO_LABELS,
+  LOCALI_LABELS,
+  BAGNI_LABELS,
+} from '@/lib/labels';
 
 export interface Step2FormValues {
   stato: StatoCoefficientKey;
@@ -72,25 +78,6 @@ interface Step2ViewProps {
   onNewValuation: () => void;
 }
 
-// Readable labels for form1 summary display
-const TIPOLOGIA_LABELS: Record<string, string> = {
-  appartamento: 'Appartamento', openspaceLoft: 'Open Space / Loft', mansarda: 'Mansarda',
-  attico: 'Attico', villettaSchiera: 'Villetta a schiera', villa: 'Villa',
-  rusticoCasale: 'Rustico / Casale', stabilePalazzo: 'Stabile / Palazzo',
-};
-const PIANO_LABELS: Record<string, string> = {
-  interrato: 'Interrato', seminterrato: 'Seminterrato', pianoTerra: 'Piano Terra',
-  rialzato: 'Rialzato', piano1: '1° Piano', piano2: '2° Piano', piano3: '3° Piano',
-  piano4: '4° Piano', piano5: '5° Piano', piano6: '6° Piano', piano7: '7° Piano',
-  piano8: '8° Piano', piano9: '9° Piano', piano10Plus: '10° Piano o superiore',
-};
-const LOCALI_LABELS: Record<string, string> = {
-  locale1: '1 locale', locali2: '2 locali', locali3: '3 locali', locali4: '4 locali',
-  locali5: '5 locali', locali6: '6 locali', locali7Plus: '7+ locali',
-};
-const BAGNI_LABELS: Record<string, string> = {
-  bagno1: '1 bagno', bagni2: '2 bagni', bagni3: '3 bagni', bagni4: '4 bagni', bagni5Plus: '5+ bagni',
-};
 
 export function Step2View({
   form,

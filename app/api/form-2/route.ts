@@ -4,62 +4,24 @@ import ExcelJS from 'exceljs';
 import { put } from '@vercel/blob';
 import { getValuationConfig, getCoefficienti } from '@/lib/config';
 import type { ValuationCoefficientTables, PianoConAscensoreKey, PianoSenzaAscensoreKey } from '@/lib/config';
+import {
+  TIPOLOGIA_LABELS as L_TIPOLOGIA,
+  STATO_LABELS as L_STATO,
+  CLASSE_ENERGETICA_LABELS as L_CLASSE_EN,
+  ANNO_COST_LABELS as L_ANNO_COST,
+  PIANO_LABELS as L_PIANO,
+  LOCALI_LABELS as L_LOCALI,
+  BAGNI_LABELS as L_BAGNI,
+  ASCENSORE_LABELS as L_ASCENSORE,
+  TERRAZZO_LABELS as L_TERRAZZO,
+  GIARDINO_LABELS as L_GIARDINO,
+  GARAGE_LABELS as L_GARAGE,
+  CANTINA_LABELS as L_CANTINA,
+  RISCALDAMENTO_LABELS as L_RISCALDAMENTO,
+} from '@/lib/labels';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api/form-2');
-
-// ─── Readable labels ────────────────────────────────────────────────────────
-
-const L_TIPOLOGIA: Record<string, string> = {
-  appartamento: 'Appartamento', openspaceLoft: 'Open Space / Loft', mansarda: 'Mansarda',
-  attico: 'Attico', villettaSchiera: 'Villetta a schiera', villa: 'Villa',
-  rusticoCasale: 'Rustico / Casale', stabilePalazzo: 'Stabile / Palazzo',
-};
-const L_PIANO: Record<string, string> = {
-  interrato: 'Interrato', seminterrato: 'Seminterrato', pianoTerra: 'Piano Terra',
-  rialzato: 'Rialzato', piano1: '1° Piano', piano2: '2° Piano', piano3: '3° Piano',
-  piano4: '4° Piano', piano5: '5° Piano', piano6: '6° Piano', piano7: '7° Piano',
-  piano8: '8° Piano', piano9: '9° Piano', piano10Plus: '10° Piano o superiore',
-};
-const L_LOCALI: Record<string, string> = {
-  locale1: '1 locale', locali2: '2 locali', locali3: '3 locali', locali4: '4 locali',
-  locali5: '5 locali', locali6: '6 locali', locali7Plus: '7+ locali',
-};
-const L_BAGNI: Record<string, string> = {
-  bagno1: '1 bagno', bagni2: '2 bagni', bagni3: '3 bagni', bagni4: '4 bagni', bagni5Plus: '5+ bagni',
-};
-const L_STATO: Record<string, string> = {
-  daRistrutturare: 'Da ristrutturare', daRiattare: 'Da riattare', abitabile: 'Abitabile',
-  buono: 'Buono', ottimo: 'Ottimo', ristrutturato: 'Ristrutturato', nuovo: 'Nuovo',
-};
-const L_CLASSE_EN: Record<string, string> = {
-  G: 'G', F: 'F', E: 'E', D: 'D', C: 'C', B: 'B', A1: 'A1', A2: 'A2', A3: 'A3', A4: 'A4',
-};
-const L_ANNO_COST: Record<string, string> = {
-  prima1945: 'Prima del 1945', dal1945al1960: '1945–1960', dal1961al1980: '1961–1980',
-  dal1981al2000: '1981–2000', dal2001al2010: '2001–2010', dal2011al2020: '2011–2020',
-  dal2021inPoi: '2021 o successivo',
-};
-const L_ASCENSORE: Record<string, string> = { no: 'No', si: 'Sì' };
-const L_TERRAZZO: Record<string, string> = {
-  nessuno: 'Nessuno', balcone: 'Balcone', balconiMultipli: 'Balconi multipli',
-  terrazzoAbitabile: 'Terrazzo abitabile', terrazzoPanoramico: 'Terrazzo panoramico',
-};
-const L_GIARDINO: Record<string, string> = {
-  nessuno: 'Nessuno', piccolo: 'Piccolo (<50 mq)', medio: 'Medio (50–150 mq)',
-  grande: 'Grande (>150 mq)', importante: 'Giardino importante',
-};
-const L_GARAGE: Record<string, string> = {
-  nessuno: 'Nessuno', postoScoperto: 'Posto auto scoperto', postoCoperto: 'Posto auto coperto',
-  boxSingolo: 'Box singolo', boxDoppio: 'Box doppio',
-};
-const L_CANTINA: Record<string, string> = { no: 'No', si: 'Sì' };
-const L_RISCALDAMENTO: Record<string, string> = {
-  assente: 'Assente', centralizzatoVecchio: 'Centralizzato (vecchio)',
-  centralizzatoContabilizzato: 'Centralizzato contabilizzato', autonomo: 'Autonomo',
-  autonomoCondensazione: 'Autonomo a condensazione', pompaDiCalore: 'Pompa di calore',
-  impiantoRadiante: 'Impianto radiante/evoluto',
-};
 
 // ─── Zod schema ─────────────────────────────────────────────────────────────
 
