@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { ALLOWED_CITIES } from '@/lib/cities';
-import type { ValuationConfig } from '@/lib/config';
+import type { ValuationConfig, ValuationCoefficientTables } from '@/lib/config';
 
 interface ConfigEditorViewProps {
   config: ValuationConfig;
@@ -15,12 +16,171 @@ interface ConfigEditorViewProps {
   calculatePreview: (city: string) => number;
 }
 
+// ─── Label maps per ogni tabella coefficiente ────────────────────────────────
+
+type CoeffSection = {
+  key: keyof ValuationCoefficientTables;
+  title: string;
+  ref: string;
+  labels: Record<string, string>;
+};
+
+const COEFF_SECTIONS: CoeffSection[] = [
+  {
+    key: 'tipologia',
+    title: 'Tipologia Immobile',
+    ref: 'Riferimento: Appartamento = 1,00',
+    labels: {
+      appartamento: 'Appartamento', openspaceLoft: 'Open Space / Loft', mansarda: 'Mansarda',
+      attico: 'Attico', villettaSchiera: 'Villetta a schiera', villa: 'Villa',
+      rusticoCasale: 'Rustico / Casale', stabilePalazzo: 'Stabile / Palazzo',
+    },
+  },
+  {
+    key: 'stato',
+    title: 'Stato Immobile',
+    ref: 'Riferimento: Buono = 1,00',
+    labels: {
+      daRistrutturare: 'Da ristrutturare', daRiattare: 'Da riattare', abitabile: 'Abitabile',
+      buono: 'Buono', ottimo: 'Ottimo', ristrutturato: 'Ristrutturato', nuovo: 'Nuovo',
+    },
+  },
+  {
+    key: 'classeEnergetica',
+    title: 'Classe Energetica',
+    ref: 'Riferimento: D = 1,00',
+    labels: { G: 'G', F: 'F', E: 'E', D: 'D', C: 'C', B: 'B', A1: 'A1', A2: 'A2', A3: 'A3', A4: 'A4' },
+  },
+  {
+    key: 'annoCostruzione',
+    title: 'Anno di Costruzione',
+    ref: 'Riferimento: 1981–2000 = 1,00',
+    labels: {
+      prima1945: 'Prima del 1945', dal1945al1960: '1945–1960', dal1961al1980: '1961–1980',
+      dal1981al2000: '1981–2000', dal2001al2010: '2001–2010', dal2011al2020: '2011–2020',
+      dal2021inPoi: '2021+',
+    },
+  },
+  {
+    key: 'pianoSenzaAscensore',
+    title: 'Piano (Senza Ascensore)',
+    ref: 'Riferimento: 1° Piano = 1,00',
+    labels: {
+      interrato: 'Interrato', seminterrato: 'Seminterrato', pianoTerra: 'Piano Terra',
+      rialzato: 'Rialzato', piano1: '1° Piano', piano2: '2° Piano', piano3: '3° Piano',
+      piano4: '4° Piano', piano5: '5° Piano', piano6Plus: '6° Piano e oltre',
+    },
+  },
+  {
+    key: 'pianoConAscensore',
+    title: 'Piano (Con Ascensore)',
+    ref: 'Riferimento: 1° Piano = 1,00',
+    labels: {
+      pianoTerra: 'Piano Terra', piano1: '1° Piano', piano2: '2° Piano', piano3: '3° Piano',
+      piano4: '4° Piano', piano5: '5° Piano', piano6: '6° Piano', piano7: '7° Piano',
+      piano8: '8° Piano', piano9: '9° Piano', piano10Plus: '10° Piano e oltre',
+    },
+  },
+  {
+    key: 'locali',
+    title: 'Numero Locali',
+    ref: 'Riferimento: 3 locali = 1,00',
+    labels: {
+      locale1: '1 locale', locali2: '2 locali', locali3: '3 locali', locali4: '4 locali',
+      locali5: '5 locali', locali6: '6 locali', locali7Plus: '7+ locali',
+    },
+  },
+  {
+    key: 'bagni',
+    title: 'Numero Bagni',
+    ref: 'Riferimento: 1 bagno = 1,00',
+    labels: {
+      bagno1: '1 bagno', bagni2: '2 bagni', bagni3: '3 bagni', bagni4: '4 bagni', bagni5Plus: '5+ bagni',
+    },
+  },
+  {
+    key: 'ascensore',
+    title: 'Ascensore',
+    ref: 'Riferimento: No = 1,00',
+    labels: { no: 'No', si: 'Sì' },
+  },
+  {
+    key: 'terrazzo',
+    title: 'Terrazzo / Balcone',
+    ref: 'Riferimento: Nessuno = 1,00',
+    labels: {
+      nessuno: 'Nessuno', balcone: 'Balcone', balconiMultipli: 'Balconi multipli',
+      terrazzoAbitabile: 'Terrazzo abitabile', terrazzoPanoramico: 'Terrazzo panoramico',
+    },
+  },
+  {
+    key: 'giardino',
+    title: 'Giardino',
+    ref: 'Riferimento: Nessuno = 1,00',
+    labels: {
+      nessuno: 'Nessuno', piccolo: 'Piccolo (<50 mq)', medio: 'Medio (50–150 mq)',
+      grande: 'Grande (>150 mq)', importante: 'Giardino importante',
+    },
+  },
+  {
+    key: 'garage',
+    title: 'Garage / Box',
+    ref: 'Riferimento: Nessuno = 1,00',
+    labels: {
+      nessuno: 'Nessuno', postoScoperto: 'Posto auto scoperto', postoCoperto: 'Posto auto coperto',
+      boxSingolo: 'Box singolo', boxDoppio: 'Box doppio',
+    },
+  },
+  {
+    key: 'cantina',
+    title: 'Cantina',
+    ref: 'Riferimento: No = 1,00',
+    labels: { no: 'No', si: 'Sì' },
+  },
+  {
+    key: 'riscaldamento',
+    title: 'Riscaldamento',
+    ref: 'Riferimento: Centralizzato contabilizzato = 1,00',
+    labels: {
+      assente: 'Assente', centralizzatoVecchio: 'Centralizzato (vecchio)',
+      centralizzatoContabilizzato: 'Centralizzato contabilizzato', autonomo: 'Autonomo',
+      autonomoCondensazione: 'Autonomo a condensazione', pompaDiCalore: 'Pompa di calore',
+      impiantoRadiante: 'Impianto radiante/evoluto',
+    },
+  },
+];
+
+// ─── Accordion component ─────────────────────────────────────────────────────
+
+function Accordion({ title, ref: refLabel, children }: { title: string; ref: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border border-slate-200 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+      >
+        <div>
+          <span className="font-semibold text-slate-800">{title}</span>
+          <span className="ml-3 text-xs text-slate-400 font-normal">{refLabel}</span>
+        </div>
+        <span className="text-slate-400 text-lg">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && <div className="p-5 bg-white space-y-3">{children}</div>}
+    </div>
+  );
+}
+
+// ─── Main view ───────────────────────────────────────────────────────────────
+
 export function ConfigEditorView({
   config,
   saving,
   message,
   onCityPriceChange,
   onDefaultPriceChange,
+  onCoefficienteChange,
   onSave,
   onReset,
   calculatePreview,
@@ -78,6 +238,40 @@ export function ConfigEditorView({
               min={100} max={10000} step={50}
             />
           </div>
+        </div>
+      </div>
+
+      {/* Coefficienti Immobiliari */}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="p-6 border-b border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800">Coefficienti Immobiliari</h2>
+          <p className="text-slate-500 text-sm mt-1">
+            Modifica i moltiplicatori per ogni caratteristica. 1,00 = neutro, &gt;1,00 = premium, &lt;1,00 = sconto.
+          </p>
+        </div>
+        <div className="p-6 space-y-3">
+          {COEFF_SECTIONS.map(section => {
+            const tableValues = config.coefficienti[section.key] as Record<string, number>;
+            return (
+              <Accordion key={section.key} title={section.title} ref={section.ref}>
+                {Object.entries(section.labels).map(([k, label]) => (
+                  <div key={k} className="flex items-center gap-4">
+                    <span className="flex-1 text-sm text-slate-700">{label}</span>
+                    <input
+                      type="number"
+                      value={(tableValues[k] ?? 1.00).toFixed(2)}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        if (!isNaN(v)) onCoefficienteChange(section.key, k, v);
+                      }}
+                      className="w-24 px-2 py-1.5 border border-slate-300 rounded-lg text-right text-sm font-mono text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      step={0.01} min={0.01} max={5.00}
+                    />
+                  </div>
+                ))}
+              </Accordion>
+            );
+          })}
         </div>
       </div>
 
