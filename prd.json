@@ -303,7 +303,7 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "NON aggiornare app/api/form-2/route.ts in questo story — verrà fatto in US-104. In questo story la route riceve ancora i vecchi campi e usa ancora la formula vecchia. Il disconnect è temporaneo e accettabile in sviluppo. Assicurarsi che tutti i campi rimossi da Step2FormValues siano rimossi anche da Form2.tsx."
     },
     {
