@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-06-02 - US-105
+- Added 14 accordion sections to ConfigEditorView.tsx for all coefficient tables
+- Each accordion shows key→label rows with number inputs (step=0.01, min=0.01, max=5.00)
+- ConfigEditor.tsx already had handleCoefficienteChange (added in US-104); wired it to ConfigEditorView
+- Reset button resets full config including coefficienti back to defaultConfig
+- Files: components/admin/ConfigEditorView.tsx (ConfigEditor.tsx already correct)
+- **Learnings for future iterations:**
+  - Accordion is a local component (not shared) — keep it in ConfigEditorView
+  - ValuationCoefficientTables keys accessed via `config.coefficienti[section.key] as Record<string, number>` since index signature missing
+---
+
 ## 2026-06-02 - US-104
 - Updated app/api/form-2/route.ts: new Zod schema (stato, classeEnergetica, annoCostruzione, ascensore, terrazzo, giardino, garage, cantina, riscaldamento, notes; form1Data adds tipologia/piano/locali/bagni as optional)
 - Implemented calcolaPianoCoeff() pure function (piano6/7/8/9 without elevator → piano6Plus fallback)

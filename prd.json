@@ -336,7 +336,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Usare il pattern esistente ConfigEditor/ConfigEditorView (MVC). La sezione coefficienti viene aggiunta DOPO le sezioni esistenti (prezzi per comune, prezzo default). Mantenere il bottone Reset che resetta anche i coefficienti ai defaults."
     },
     {
