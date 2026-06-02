@@ -73,7 +73,7 @@ const formSchema = z.object({
   garage: z.enum(['nessuno', 'postoScoperto', 'postoCoperto', 'boxSingolo', 'boxDoppio']),
   cantina: z.enum(['no', 'si']),
   riscaldamento: z.enum(['assente', 'centralizzatoVecchio', 'centralizzatoContabilizzato', 'autonomo', 'autonomoCondensazione', 'pompaDiCalore', 'impiantoRadiante']),
-  notes: z.string().max(500).optional(),
+  notes: z.string().max(500).trim().optional(),
   sessionToken: z.string(),
   form1Data: z.object({
     firstName: z.string(),
