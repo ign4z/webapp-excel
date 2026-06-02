@@ -320,7 +320,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Questo story sostituisce completamente il sistema di calcolo. Se config.coefficienti è undefined (blob vecchio), getCoefficienti() deve restituire i defaults da config.defaults.json. La formula è pura moltiplicazione — nessun addizione percentuale. Il baseValue mostrato nel result screen è pricePerSqm * sqm (senza coefficienti); il finalValue è baseValue * coeffTotale."
     },
     {

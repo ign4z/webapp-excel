@@ -10,6 +10,22 @@
 
 ---
 
+## 2026-06-02 - US-104
+- Updated app/api/form-2/route.ts: new Zod schema (stato, classeEnergetica, annoCostruzione, ascensore, terrazzo, giardino, garage, cantina, riscaldamento, notes; form1Data adds tipologia/piano/locali/bagni as optional)
+- Implemented calcolaPianoCoeff() pure function (piano6/7/8/9 without elevator → piano6Plus fallback)
+- Implemented multiplicative formula: baseValue * 13 coefficients = finalValue
+- Details response: array of {label, coefficiente} objects + 'Coefficiente totale' row
+- Updated Excel: new DATI IMMOBILE section with all v3 fields, COEFFICIENTI APPLICATI section
+- Removed legacy fields from ValuationConfig and config.defaults.json (depreciation, secondBathroom, cellar, renovated, groundFloor, topFloor, exposure*, heating*)
+- Updated admin/config/route.ts: removed legacy allowedKeys and percentageFields validation; added coefficienti range validation [0.01, 5.00]
+- Updated ConfigEditor.tsx and ConfigEditorView.tsx to remove all legacy field references
+- Files changed: app/api/form-2/route.ts, lib/config.ts, lib/config.defaults.json, app/api/admin/config/route.ts, components/admin/ConfigEditor.tsx, components/admin/ConfigEditorView.tsx
+- **Learnings for future iterations:**
+  - ExcelJS writeBuffer() pattern: `await workbook.xlsx.writeBuffer() as unknown as Promise<Buffer>` then `await buffer` separately
+  - calcolaPianoCoeff: soloConAscensore = [piano6,piano7,piano8,piano9] maps to piano6Plus when no elevator
+  - ConfigEditorView was completely rebuilt — old tab system (features/exposure/heating) removed
+---
+
 ## 2026-06-02 - US-103
 - Rewrote Step2View.tsx: removed ValuationPercentages, DEFAULT_PCT, legacy form fields (floor, hasElevator, hasSecondBathroom, hasCellar, exposure, buildYear, isRecentlyRenovated, heatingType). Added 9 new select fields (stato, classeEnergetica, annoCostruzione, ascensore, terrazzo, giardino, garage, cantina, riscaldamento)
 - Summary card now shows tipologia/piano/locali/bagni from form1Data with readable labels (falls back to '—')
