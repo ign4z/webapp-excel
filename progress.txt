@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-06-02 - US-102
+- Added tipologia, piano, locali, bagni fields to Step1FormValues in Step1View.tsx (with PianoFormKey = Exclude<PianoKey, 'piano6Plus'>)
+- Added 4 new select inputs in Step1View.tsx after squareMeters field
+- Updated Zod schema and default values in Form1.tsx
+- Updated app/api/form-1/route.ts: added 4 z.enum() fields, included them in response body
+- Files changed: components/valuation/Step1View.tsx, components/forms/Form1.tsx, app/api/form-1/route.ts
+- **Learnings for future iterations:**
+  - PianoKey includes 'piano6Plus' (server-only aggregation) — form should use Exclude<PianoKey, 'piano6Plus'> to avoid Zod resolver type mismatch
+  - SessionStorage restore already handled by form.reset(JSON.parse(stored)) in Form1.tsx — no special code needed for new fields
+---
+
 ## 2026-06-02 - US-101
 - Added 15 exported string union types to lib/config.ts (TipologiaCoefficientKey, StatoCoefficientKey, ClasseEnergeticaKey, AnnoCostKey, PianoSenzaAscensoreKey, PianoConAscensoreKey, PianoKey, LocaliKey, BagniKey, AscensoreKey, TerrazzoKey, GiardinoKey, GarageKey, CantinaKey, RiscaldamentoKey)
 - Added ValuationCoefficientTables interface (14 coefficient tables) and added coefficienti field to ValuationConfig

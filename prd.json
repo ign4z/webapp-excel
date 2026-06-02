@@ -286,7 +286,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Piano viene aggiunto a Form1 con nome 'piano' (PianoKey string). Il vecchio campo 'floor' (number) rimane in Form2 tipizzato ma verrà rimosso in US-103. Non toccare Form2 o Step2View in questo story."
     },
     {
