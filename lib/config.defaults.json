@@ -1,0 +1,145 @@
+{
+  "pricePerSqmByCity": {
+    "Locate di Triulzi": 2000,
+    "Fizzonasco": 1750,
+    "Opera": 1900,
+    "Pieve Emanuele": 1850,
+    "Tolcinasco": 1650,
+    "Siziano": 1700,
+    "Carpiano": 1600
+  },
+  "pricePerSqmDefault": 2500,
+  "depreciation": 0.3,
+  "secondBathroom": 3,
+  "cellar": 3,
+  "renovated": 10,
+  "groundFloor": -5,
+  "topFloor": -3,
+  "exposureSouth": 5,
+  "exposureEast": 3,
+  "exposureWest": 2,
+  "exposureNorth": -3,
+  "heatingAutonomous": 5,
+  "heatingCentralized": -2,
+  "coefficienti": {
+    "tipologia": {
+      "appartamento": 1.00,
+      "openspaceLoft": 1.10,
+      "mansarda": 0.95,
+      "attico": 1.25,
+      "villettaSchiera": 1.10,
+      "villa": 1.30,
+      "rusticoCasale": 0.90,
+      "stabilePalazzo": 1.15
+    },
+    "stato": {
+      "daRistrutturare": 0.80,
+      "daRiattare": 0.90,
+      "abitabile": 0.95,
+      "buono": 1.00,
+      "ottimo": 1.08,
+      "ristrutturato": 1.12,
+      "nuovo": 1.20
+    },
+    "classeEnergetica": {
+      "G": 0.88,
+      "F": 0.92,
+      "E": 0.96,
+      "D": 1.00,
+      "C": 1.04,
+      "B": 1.08,
+      "A1": 1.12,
+      "A2": 1.15,
+      "A3": 1.18,
+      "A4": 1.22
+    },
+    "annoCostruzione": {
+      "prima1945": 0.92,
+      "dal1945al1960": 0.95,
+      "dal1961al1980": 0.98,
+      "dal1981al2000": 1.00,
+      "dal2001al2010": 1.05,
+      "dal2011al2020": 1.10,
+      "dal2021inPoi": 1.15
+    },
+    "pianoSenzaAscensore": {
+      "interrato": 0.60,
+      "seminterrato": 0.75,
+      "pianoTerra": 0.92,
+      "rialzato": 0.96,
+      "piano1": 1.00,
+      "piano2": 1.03,
+      "piano3": 1.05,
+      "piano4": 1.04,
+      "piano5": 1.00,
+      "piano6Plus": 0.95
+    },
+    "pianoConAscensore": {
+      "pianoTerra": 0.95,
+      "piano1": 1.00,
+      "piano2": 1.03,
+      "piano3": 1.05,
+      "piano4": 1.07,
+      "piano5": 1.09,
+      "piano6": 1.10,
+      "piano7": 1.11,
+      "piano8": 1.12,
+      "piano9": 1.13,
+      "piano10Plus": 1.15
+    },
+    "locali": {
+      "locale1": 0.90,
+      "locali2": 0.96,
+      "locali3": 1.00,
+      "locali4": 1.05,
+      "locali5": 1.10,
+      "locali6": 1.15,
+      "locali7Plus": 1.20
+    },
+    "bagni": {
+      "bagno1": 1.00,
+      "bagni2": 1.08,
+      "bagni3": 1.14,
+      "bagni4": 1.18,
+      "bagni5Plus": 1.20
+    },
+    "ascensore": {
+      "no": 1.00,
+      "si": 1.05
+    },
+    "terrazzo": {
+      "nessuno": 1.00,
+      "balcone": 1.03,
+      "balconiMultipli": 1.05,
+      "terrazzoAbitabile": 1.10,
+      "terrazzoPanoramico": 1.15
+    },
+    "giardino": {
+      "nessuno": 1.00,
+      "piccolo": 1.05,
+      "medio": 1.10,
+      "grande": 1.15,
+      "importante": 1.20
+    },
+    "garage": {
+      "nessuno": 1.00,
+      "postoScoperto": 1.03,
+      "postoCoperto": 1.05,
+      "boxSingolo": 1.08,
+      "boxDoppio": 1.12
+    },
+    "cantina": {
+      "no": 1.00,
+      "si": 1.02
+    },
+    "riscaldamento": {
+      "assente": 0.90,
+      "centralizzatoVecchio": 0.97,
+      "centralizzatoContabilizzato": 1.00,
+      "autonomo": 1.03,
+      "autonomoCondensazione": 1.05,
+      "pompaDiCalore": 1.08,
+      "impiantoRadiante": 1.10
+    }
+  }
+}

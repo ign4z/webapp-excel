@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { getValuationConfig, defaultConfig, ValuationConfig } from '@/lib/config';
+import { getValuationConfig, defaultConfig, ValuationConfig, invalidateConfigCache } from '@/lib/config';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/config');
 
 const CONFIG_PATH = 'config/valuation-parameters.json';
 
@@ -13,14 +16,16 @@ function isAuthorized(request: NextRequest): boolean {
 /* ─── GET /api/admin/config?token=SECRET ─── */
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
+    log.warn('Unauthorized GET config attempt');
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    log.debug('Admin config GET');
     const config = await getValuationConfig();
     return NextResponse.json({ success: true, data: config });
   } catch (error) {
-    console.error('❌ Errore GET config:', error);
+    log.error('Admin config GET error', error instanceof Error ? error.message : error);
     return NextResponse.json({ success: false, error: 'Errore recupero configurazione' }, { status: 500 });
   }
 }
@@ -28,10 +33,12 @@ export async function GET(request: NextRequest) {
 /* ─── POST /api/admin/config?token=SECRET ─── */
 export async function POST(request: NextRequest) {
   if (!isAuthorized(request)) {
+    log.warn('Unauthorized POST config attempt');
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    log.info('Admin config POST: saving new config');
     const body = await request.json();
 
     if (typeof body !== 'object' || Array.isArray(body) || body === null) {
@@ -43,6 +50,7 @@ export async function POST(request: NextRequest) {
       'pricePerSqmByCity', 'pricePerSqmDefault', 'depreciation', 'secondBathroom',
       'cellar', 'renovated', 'groundFloor', 'topFloor', 'exposureSouth', 'exposureEast',
       'exposureWest', 'exposureNorth', 'heatingAutonomous', 'heatingCentralized',
+      'coefficienti',
     ]);
     for (const key of Object.keys(body)) {
       if (!allowedKeys.has(key)) {
@@ -64,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate numeric percentage fields (plausible range: -100 to 100)
-    const percentageFields: (keyof Omit<ValuationConfig, 'pricePerSqmByCity' | 'pricePerSqmDefault' | 'depreciation'>)[] = [
+    const percentageFields: (keyof Omit<ValuationConfig, 'pricePerSqmByCity' | 'pricePerSqmDefault' | 'depreciation' | 'coefficienti'>)[] = [
       'secondBathroom', 'cellar', 'renovated', 'groundFloor', 'topFloor',
       'exposureSouth', 'exposureEast', 'exposureWest', 'exposureNorth',
       'heatingAutonomous', 'heatingCentralized',
@@ -82,12 +90,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'depreciation deve essere tra 0 e 100' }, { status: 400 });
     }
 
-    // Salva su Vercel Blob sovrascrivendo il file esistente
     await put(CONFIG_PATH, JSON.stringify(newConfig, null, 2), {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
       allowOverwrite: true,
     });
+
+    invalidateConfigCache();
+    log.info('Config saved and cache invalidated');
 
     return NextResponse.json({
       success: true,
@@ -95,7 +105,7 @@ export async function POST(request: NextRequest) {
       data: newConfig,
     });
   } catch (error) {
-    console.error('❌ Errore POST config:', error);
+    log.error('Admin config POST error', error instanceof Error ? error.message : error);
     return NextResponse.json({ success: false, error: 'Errore salvataggio configurazione' }, { status: 500 });
   }
 }
