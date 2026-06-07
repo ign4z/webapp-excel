@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
+import { createLogger } from '@/lib/logger';
 
-// Lazy initialization - crea l'istanza solo quando serve
+const log = createLogger('lib/email');
+
 function getResendClient() {
   if (!process.env.RESEND_API_KEY) {
     console.warn('⚠️ RESEND_API_KEY non configurato');
@@ -30,6 +32,7 @@ export async function sendForm1Email(params: {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
+    log.info('Sending Form1 email', { to: params.email });
     const { data, error } = await resend.emails.send({
       from: 'Valutazione Immobiliare <onboarding@resend.dev>',
       to: params.email,
@@ -91,15 +94,15 @@ export async function sendForm1Email(params: {
     });
 
     if (error) {
-      console.error('❌ Errore invio email Form 1:', error);
+      log.error('Form1 email failed', error);
       return { success: false, error };
     }
 
-    console.log('✅ Email Form 1 inviata:', data);
+    log.info('Form1 email sent', { id: data?.id });
     return { success: true, data };
 
   } catch (error) {
-    console.error('❌ Errore catch email Form 1:', error);
+    log.error('Form1 email exception', error instanceof Error ? error.message : error);
     return { success: false, error };
   }
 }
@@ -119,6 +122,7 @@ export async function sendForm2Email(
       return { success: false, error: 'Resend non configurato' };
     }
 
+    log.info('Sending Form2 email', { to: email });
     const { data, error } = await resend.emails.send({
       from: 'WebApp <noreply@tuodominio.com>',
       to: email,
@@ -169,15 +173,15 @@ export async function sendForm2Email(
     });
 
     if (error) {
-      console.error('❌ Errore invio email Form 2:', error);
+      log.error('Form2 email failed', error);
       return { success: false, error };
     }
 
-    console.log('✅ Email Form 2 inviata:', data);
+    log.info('Form2 email sent', { id: data?.id });
     return { success: true, data };
-    
+
   } catch (error) {
-    console.error('❌ Errore catch email Form 2:', error);
+    log.error('Form2 email exception', error instanceof Error ? error.message : error);
     return { success: false, error };
   }
 }
@@ -198,6 +202,7 @@ export async function sendAdminNotification(
       return;
     }
 
+    log.info('Sending admin notification', { from: userName });
     await resend.emails.send({
       from: 'WebApp <noreply@tuodominio.com>',
       to: process.env.ADMIN_EMAIL || 'admin@tuodominio.com',
@@ -213,8 +218,8 @@ export async function sendAdminNotification(
       `,
     });
     
-    console.log('✅ Notifica admin inviata');
+    log.info('Admin notification sent');
   } catch (error) {
-    console.error('❌ Errore notifica admin:', error);
+    log.error('Admin notification failed', error instanceof Error ? error.message : error);
   }
 }

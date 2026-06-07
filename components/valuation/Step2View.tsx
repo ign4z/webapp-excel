@@ -121,7 +121,7 @@ export function Step2View({
         }
         .summary-estimate {
           grid-column: 1 / -1;
-          border-top: 1px solid #EDE8DF;
+          border-top: 1px solid ${tokens.border};
           padding-top: 1rem;
           margin-top: 0.25rem;
           display: flex;
@@ -156,7 +156,7 @@ export function Step2View({
           letter-spacing: 0.02em;
           margin-bottom: 1.2rem;
           padding-bottom: 0.5rem;
-          border-bottom: 1px solid #EDE8DF;
+          border-bottom: 1px solid ${tokens.border};
         }
         .optional-tag {
           font-family: 'DM Mono', monospace;
@@ -168,8 +168,8 @@ export function Step2View({
         }
         .vl-select {
           width: 100%;
-          background: white;
-          border: 1px solid #DDD7CC;
+          background: ${tokens.paperDark};
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
           font-family: 'Outfit', sans-serif;
@@ -178,14 +178,14 @@ export function Step2View({
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
           appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A84C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C41E3A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 0.9rem center;
           cursor: pointer;
         }
         .vl-select:focus {
           border-color: ${tokens.gold};
-          box-shadow: 0 0 0 3px ${tokens.goldLight}22;
+          box-shadow: 0 0 0 3px ${tokens.gold}22;
         }
         .btn-row {
           display: flex;
@@ -419,12 +419,12 @@ function ResultScreen({
           width: 4rem;
           height: 4rem;
           border-radius: 50%;
-          background: ${tokens.ink};
+          background: ${tokens.gold};
           display: inline-flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 1.5rem;
-          color: ${tokens.gold};
+          color: #FFFFFF;
           font-size: 1.6rem;
         }
         .result-title {
@@ -442,7 +442,7 @@ function ResultScreen({
           margin-bottom: 2.5rem;
         }
         .value-card {
-          background: ${tokens.ink};
+          background: ${tokens.gold};
           border-radius: 12px;
           padding: 2rem;
           margin-bottom: 1.5rem;
@@ -482,9 +482,9 @@ function ResultScreen({
           justify-content: space-between;
           align-items: center;
           padding: 0.3rem 0;
-          border-bottom: 1px solid ${tokens.inkSoft};
+          border-bottom: 1px solid rgba(255,255,255,0.2);
           font-size: 0.82rem;
-          color: #A0A8BC;
+          color: rgba(255,255,255,0.75);
           font-family: 'Outfit', sans-serif;
         }
         .value-final-label {
@@ -516,7 +516,7 @@ function ResultScreen({
           padding: 0.7rem 1.5rem;
           background: transparent;
           color: ${tokens.muted};
-          border: 1px solid #DDD7CC;
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
           font-family: 'DM Mono', monospace;
           font-size: 0.68rem;

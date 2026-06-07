@@ -16,7 +16,11 @@ type ConfigType = ValuationConfig;
 
 const defaultConfig: ConfigType = rawDefaults as ConfigType;
 
-export default function ConfigEditor() {
+interface ConfigEditorProps {
+  token: string;
+}
+
+export default function ConfigEditor({ token }: ConfigEditorProps) {
   const [config, setConfig] = useState<ConfigType>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,11 +28,11 @@ export default function ConfigEditor() {
 
   useEffect(() => {
     fetchConfig();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchConfig = async () => {
     try {
-      const token = new URLSearchParams(window.location.search).get('token');
       const response = await fetch(`/api/admin/config?token=${token}`);
       if (response.ok) {
         const data = await response.json();
@@ -47,7 +51,6 @@ export default function ConfigEditor() {
       setSaving(true);
       setMessage('');
 
-      const token = new URLSearchParams(window.location.search).get('token');
       const response = await fetch(`/api/admin/config?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,17 +110,10 @@ export default function ConfigEditor() {
     return Math.round(sqm * pricePerSqm);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-xl text-slate-600">Caricamento...</div>
-      </div>
-    );
-  }
-
   return (
     <ConfigEditorView
       config={config}
+      loading={loading}
       saving={saving}
       message={message}
       onCityPriceChange={handleCityPriceChange}

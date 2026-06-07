@@ -1,15 +1,19 @@
-import { list, put } from '@vercel/blob';
+import { list } from '@vercel/blob';
 import { cityToSlug } from '@/lib/cities';
-import * as locateDiTriulzi from './locate-di-triulzi';
-import * as opera from './opera';
-import * as pieveEmanuele from './pieve-emanuele';
-import * as fizzonasco from './fizzonasco';
-import * as tolcinasco from './tolcinasco';
-import * as siziano from './siziano';
-import * as carpiano from './carpiano';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/streets');
+import locateDiTriulzi from './locate-di-triulzi.json';
+import opera from './opera.json';
+import pieveEmanuele from './pieve-emanuele.json';
+import fizzonasco from './fizzonasco.json';
+import tolcinasco from './tolcinasco.json';
+import siziano from './siziano.json';
+import carpiano from './carpiano.json';
 
 type SeedModule = { streetPrices: Record<string, number>; defaultPrice: number };
 
+// Dati seed statici per ogni comune — usati come fallback se il blob non esiste ancora
 const SEED_MAP: Record<string, SeedModule> = {
   'locate-di-triulzi': locateDiTriulzi,
   'opera': opera,
@@ -20,17 +24,34 @@ const SEED_MAP: Record<string, SeedModule> = {
   'carpiano': carpiano,
 };
 
-/* ─── Cache in-memory per evitare chiamate ripetute al blob ─── */
-const streetCache: Map<string, { data: Record<string, number>; expiry: number }> = new Map();
-const CACHE_TTL = 1000 * 60 * 5; // 5 minuti
+// Cache in-memory senza TTL: caricata al primo accesso, invalidata manualmente
+// dopo ogni salvataggio admin tramite invalidateStreetCache()
+const streetCache: Map<string, Record<string, number>> = new Map();
 
-/** Extracts the street name from a Google Maps formatted address (first segment, lowercase). */
-export function extractStreetName(formattedAddress: string): string {
-  const parts = formattedAddress.split(',');
-  return parts[0].trim().toLowerCase();
+// Esposta alle route admin per resettare la cache dopo un salvataggio
+export function invalidateStreetCache(slug?: string): void {
+  if (slug) {
+    streetCache.delete(slug);
+    log.info('Street cache invalidated', { slug });
+  } else {
+    streetCache.clear();
+    log.info('Street cache cleared (all cities)');
+  }
 }
 
-/** Extracts the civic number from a Google Maps formatted address (second segment if purely numeric). */
+// Usata dalle route admin come fallback quando il blob non esiste ancora per una città
+export function getSeedStreetPrices(slug: string): Record<string, number> {
+  return SEED_MAP[slug]?.streetPrices ?? {};
+}
+
+// L'indirizzo da Google Maps ha il formato "Via Roma, 15, 20090 Opera MI, Italia"
+// Il nome della via è sempre il primo segmento prima della prima virgola
+export function extractStreetName(formattedAddress: string): string {
+  return formattedAddress.split(',')[0].trim().toLowerCase();
+}
+
+// Il civico è il secondo segmento solo se è puramente numerico
+// (alcuni indirizzi hanno suffissi tipo "15/A" che non vanno usati come chiave civico)
 export function extractCivicNumber(formattedAddress: string): string | null {
   const parts = formattedAddress.split(',');
   if (parts.length < 2) return null;
@@ -38,11 +59,7 @@ export function extractCivicNumber(formattedAddress: string): string | null {
   return /^\d+$/.test(segment) ? segment : null;
 }
 
-/**
- * Returns price/mq for a given street address and city.
- * Lookup priority: civic key ('via roma:15') > street key ('via roma') > seed defaultPrice > 2000 global default.
- * Uses a 5-minute in-memory cache per city; falls back to seed data if blob is unavailable.
- */
+// Priorità lookup: "via roma:15" > "via roma" > defaultPrice del seed > 2000 globale
 export async function getPriceForStreet(
   formattedAddress: string,
   city: string
@@ -54,33 +71,39 @@ export async function getPriceForStreet(
   const streetName = extractStreetName(formattedAddress);
   const civicNumber = extractCivicNumber(formattedAddress);
 
-  /* ─── Check cache ─── */
+  log.debug('Price lookup', { address: formattedAddress, city, slug });
+
   const cached = streetCache.get(slug);
-  if (cached && Date.now() < cached.expiry) {
-    return lookupPrice(cached.data, streetName, civicNumber, seed, globalDefault);
+  if (cached) {
+    const price = lookupPrice(cached, streetName, civicNumber, seed, globalDefault);
+    log.trace('Street cache hit', { slug, price });
+    return price;
   }
 
-  /* ─── Load from blob ─── */
+  log.debug('Street cache miss, loading from blob', { slug });
   try {
-    const blobPath = `streets/${slug}.json`;
-    const { blobs } = await list({ prefix: blobPath, limit: 1 });
+    const { blobs } = await list({ prefix: `streets/${slug}.json`, limit: 1 });
 
     if (blobs.length > 0) {
       const response = await fetch(blobs[0].url, { cache: 'no-store' });
       if (response.ok) {
         const data: Record<string, number> = await response.json();
-        streetCache.set(slug, { data, expiry: Date.now() + CACHE_TTL });
-        return lookupPrice(data, streetName, civicNumber, seed, globalDefault);
+        streetCache.set(slug, data);
+        const price = lookupPrice(data, streetName, civicNumber, seed, globalDefault);
+        log.debug('Streets loaded from blob', { slug, price });
+        return price;
       }
     }
-  } catch {
-    // fallback to seed
+    log.warn('Streets blob not found, falling back to seed', { slug });
+  } catch (err) {
+    log.warn('Streets blob fetch error, falling back to seed', { slug, error: err instanceof Error ? err.message : err });
   }
 
-  /* ─── Fallback to seed ─── */
   const seedData = seed?.streetPrices ?? {};
-  streetCache.set(slug, { data: seedData, expiry: Date.now() + CACHE_TTL });
-  return lookupPrice(seedData, streetName, civicNumber, seed, globalDefault);
+  streetCache.set(slug, seedData);
+  const price = lookupPrice(seedData, streetName, civicNumber, seed, globalDefault);
+  log.debug('Using seed data', { slug, price });
+  return price;
 }
 
 function lookupPrice(

@@ -1,5 +1,8 @@
 # dependencies
 /node_modules
+
+# local log files
+/logs
 /.pnp
 .pnp.js
 

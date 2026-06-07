@@ -10,24 +10,24 @@ function ConfigPageContent() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">❌ Accesso Negato</h1>
-          <p className="text-gray-600">Token di accesso mancante</p>
+      <div className="min-h-screen flex items-center justify-center bg-zinc-900">
+        <div className="bg-zinc-900 border border-zinc-700 p-8 rounded-lg text-center">
+          <h1 className="text-2xl font-bold text-red-500 mb-4">❌ Accesso Negato</h1>
+          <p className="text-zinc-400">Token di accesso mancante</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-12 px-4">
+    <div className="min-h-screen bg-zinc-900 py-12 px-4">
       <div className="max-w-4xl mx-auto">
 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-zinc-200 mb-2">
             🔧 Admin - Configurazione
           </h1>
-          <p className="text-gray-600">
+          <p className="text-zinc-400">
             Gestisci i parametri di calcolo dei preventivi
           </p>
         </div>
@@ -35,26 +35,25 @@ function ConfigPageContent() {
         <div className="mb-6 flex gap-4">
           <Link
             href={`/admin/files?token=${token}`}
-            className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
+            className="px-4 py-2 bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition"
           >
             📂 Gestione File
           </Link>
           <Link
             href={`/admin/streets?token=${token}`}
-            className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
+            className="px-4 py-2 bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition"
           >
             🗺️ Prezzi per Via
           </Link>
           <Link
             href="/"
-            className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition"
+            className="px-4 py-2 bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition"
           >
             🏠 Home
           </Link>
         </div>
 
-        {/* ConfigEditor legge il token da window.location.search autonomamente */}
-        <ConfigEditor />
+        <ConfigEditor token={token} />
 
       </div>
     </div>
@@ -63,7 +62,7 @@ function ConfigPageContent() {
 
 export default function ConfigPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Caricamento...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-900 text-zinc-400">Caricamento...</div>}>
       <ConfigPageContent />
     </Suspense>
   );

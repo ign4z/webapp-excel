@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ALLOWED_CITIES } from '@/lib/cities';
 import { StreetsEditorView } from './StreetsEditorView';
 
@@ -35,7 +35,6 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
   const [importMsg, setImportMsg] = useState('');
   const [showNewCivic, setShowNewCivic] = useState(false);
   const [newCivic, setNewCivic] = useState<NewCivicForm>({ street: '', civic: '', price: 0 });
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadStreets();
@@ -138,7 +137,8 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setImportMsg(`✅ Importate ${data.imported} vie`);
+        const civicPart = data.importedCivics > 0 ? `, ${data.importedCivics} civici` : '';
+        setImportMsg(`✅ Importate ${data.importedStreets} vie${civicPart}`);
         await loadStreets();
       } else {
         setImportMsg(`❌ ${data.error ?? 'Errore importazione'}`);
@@ -146,7 +146,7 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
     } catch {
       setImportMsg('❌ Errore di rete');
     } finally {
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      e.target.value = '';
       setTimeout(() => setImportMsg(''), 5000);
     }
   }
@@ -160,6 +160,10 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
     setCivicRows(prev => [...prev, { ...newCivic }]);
     setNewCivic({ street: streetRows[0]?.key ?? '', civic: '', price: 0 });
     setShowNewCivic(false);
+  }
+
+  function handleCivicRowChange(i: number, field: keyof CivicRow, val: string | number) {
+    setCivicRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
   }
 
   const streetNames = streetRows.map(r => r.key).filter(k => k.trim());
@@ -182,6 +186,7 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
       onDeleteRow={(i) => setStreetRows(prev => prev.filter((_, idx) => idx !== i))}
       onAddRow={() => setStreetRows(prev => [...prev, { key: '', value: 0 }])}
       onAddCivic={handleAddCivic}
+      onCivicRowChange={handleCivicRowChange}
       onDeleteCivic={(i) => setCivicRows(prev => prev.filter((_, idx) => idx !== i))}
       onNewCivicChange={setNewCivic}
       onShowNewCivic={(show) => {

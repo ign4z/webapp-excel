@@ -38,23 +38,23 @@ function formatDate(dateString: string): string {
 export function FileTableView({ files, loading, deletingUrl, onDelete, onRefresh }: FileTableViewProps) {
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-zinc-800 border-zinc-700">
         <CardContent className="py-12 text-center">
-          <p className="text-gray-600">Caricamento file...</p>
+          <p className="text-zinc-400">Caricamento file...</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="bg-zinc-800 border-zinc-700">
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>📂 File Excel Generati</CardTitle>
-            <CardDescription>Totale file: {files.length}</CardDescription>
+            <CardTitle className="text-zinc-200">📂 File Excel Generati</CardTitle>
+            <CardDescription className="text-zinc-400">Totale file: {files.length}</CardDescription>
           </div>
-          <Button onClick={onRefresh} variant="outline" size="sm">
+          <Button onClick={onRefresh} variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
             🔄 Aggiorna
           </Button>
         </div>
@@ -62,32 +62,32 @@ export function FileTableView({ files, loading, deletingUrl, onDelete, onRefresh
 
       <CardContent>
         {files.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-zinc-500">
             <p className="text-lg">Nessun file presente</p>
             <p className="text-sm mt-2">I file Excel generati appariranno qui</p>
           </div>
         ) : (
-          <div className="rounded-md border overflow-x-auto">
+          <div className="rounded-md border border-zinc-700 overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50%]">Nome File</TableHead>
-                  <TableHead>Dimensione</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                <TableRow className="border-zinc-700 hover:bg-zinc-800">
+                  <TableHead className="w-[50%] text-zinc-400">Nome File</TableHead>
+                  <TableHead className="text-zinc-400">Dimensione</TableHead>
+                  <TableHead className="text-zinc-400">Data Creazione</TableHead>
+                  <TableHead className="text-right text-zinc-400">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {files.map((file) => (
-                  <TableRow key={file.url}>
-                    <TableCell className="font-medium">
+                  <TableRow key={file.url} className="border-zinc-800 hover:bg-zinc-800">
+                    <TableCell className="font-medium text-zinc-200">
                       <div className="flex items-center gap-2">
-                        <span className="text-green-600">📊</span>
+                        <span className="text-green-400">📊</span>
                         <span className="truncate max-w-xs">{file.filename}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{formatFileSize(file.size)}</TableCell>
-                    <TableCell>{formatDate(file.uploadedAt)}</TableCell>
+                    <TableCell className="text-zinc-300">{formatFileSize(file.size)}</TableCell>
+                    <TableCell className="text-zinc-300">{formatDate(file.uploadedAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <a

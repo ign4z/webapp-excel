@@ -1,7 +1,8 @@
-// app/api/admin/files/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { list, del } from '@vercel/blob';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/files');
 
 /**
  * GET /api/admin/files?token=SECRET
@@ -9,16 +10,13 @@ import { list, del } from '@vercel/blob';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verifica autenticazione
     const token = request.nextUrl.searchParams.get('token');
     if (token !== process.env.ADMIN_TOKEN) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      log.warn('Unauthorized GET files attempt');
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Lista tutti i blob (escluso il config)
+    log.debug('Admin files GET');
     const { blobs } = await list();
 
     // Filtra solo i file Excel (escludi config.json)
@@ -32,6 +30,7 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
 
+    log.debug('Admin files listed', { count: excelFiles.length });
     return NextResponse.json({
       success: true,
       data: excelFiles,
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Errore lista file:', error);
+    log.error('Admin files GET error', error instanceof Error ? error.message : error);
     return NextResponse.json(
       { success: false, error: 'Errore recupero file' },
       { status: 500 }
@@ -53,35 +52,24 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // Verifica autenticazione
     const token = request.nextUrl.searchParams.get('token');
     if (token !== process.env.ADMIN_TOKEN) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      log.warn('Unauthorized DELETE file attempt');
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const blobUrl = request.nextUrl.searchParams.get('url');
     if (!blobUrl) {
-      return NextResponse.json(
-        { success: false, error: 'URL blob mancante' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'URL blob mancante' }, { status: 400 });
     }
 
-    // Elimina il file
     await del(blobUrl);
+    log.info('Admin file deleted', { url: blobUrl });
 
-    console.log('✅ File eliminato:', blobUrl);
-
-    return NextResponse.json({
-      success: true,
-      message: 'File eliminato con successo',
-    });
+    return NextResponse.json({ success: true, message: 'File eliminato con successo' });
 
   } catch (error) {
-    console.error('❌ Errore eliminazione file:', error);
+    log.error('Admin files DELETE error', error instanceof Error ? error.message : error);
     return NextResponse.json(
       { success: false, error: 'Errore eliminazione file' },
       { status: 500 }

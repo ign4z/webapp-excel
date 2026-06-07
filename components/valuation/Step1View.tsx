@@ -62,8 +62,8 @@ export function Step1View({
         @media (max-width: 480px) { .two-col { grid-template-columns: 1fr; } }
         .vl-select {
           width: 100%;
-          background: white;
-          border: 1px solid #DDD7CC;
+          background: ${tokens.paperDark};
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
           font-family: 'Outfit', sans-serif;
@@ -72,14 +72,14 @@ export function Step1View({
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
           appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A84C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C41E3A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 0.9rem center;
           cursor: pointer;
         }
         .vl-select:focus {
           border-color: ${tokens.gold};
-          box-shadow: 0 0 0 3px ${tokens.goldLight}22;
+          box-shadow: 0 0 0 3px ${tokens.gold}22;
         }
         .section-title {
           font-family: 'Cormorant Garamond', serif;
@@ -89,7 +89,7 @@ export function Step1View({
           letter-spacing: 0.02em;
           margin-bottom: 1.2rem;
           padding-bottom: 0.5rem;
-          border-bottom: 1px solid #EDE8DF;
+          border-bottom: 1px solid ${tokens.border};
         }
         .form-fields { display: flex; flex-direction: column; gap: 1.1rem; }
         .recaptcha-wrap { display: flex; justify-content: center; margin: 0.5rem 0; }
