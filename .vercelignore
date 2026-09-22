@@ -1,0 +1,8 @@
+# File locali da non caricare mai con `vercel deploy`
+.env
+.env*.local
+logs
+.next
+node_modules
+.claude/settings.local.json
+*.tsbuildinfo
