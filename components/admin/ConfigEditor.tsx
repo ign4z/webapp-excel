@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { ConfigEditorView } from './ConfigEditorView';
 import rawDefaults from '@/lib/config.defaults.json';
 import type { ValuationConfig } from '@/lib/config';
+import { adminFetch } from '@/components/admin/adminFetch';
 
 const configSchema = z.object({
   pricePerSqmByCity: z.record(z.string(), z.number().min(100).max(20000)),
@@ -33,7 +34,7 @@ export default function ConfigEditor({ token }: ConfigEditorProps) {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch(`/api/admin/config?token=${token}`);
+      const response = await adminFetch(token, '/api/admin/config');
       if (response.ok) {
         const data = await response.json();
         setConfig({ ...defaultConfig, ...data.data });
@@ -51,7 +52,7 @@ export default function ConfigEditor({ token }: ConfigEditorProps) {
       setSaving(true);
       setMessage('');
 
-      const response = await fetch(`/api/admin/config?token=${token}`, {
+      const response = await adminFetch(token, '/api/admin/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

@@ -15,7 +15,8 @@ interface FileTableViewProps {
   files: ExcelFile[];
   loading: boolean;
   deletingUrl: string | null;
-  onDelete: (url: string, filename: string) => void;
+  onDelete: (file: ExcelFile) => void;
+  onDownload: (file: ExcelFile) => void;
   onRefresh: () => void;
 }
 
@@ -35,7 +36,7 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function FileTableView({ files, loading, deletingUrl, onDelete, onRefresh }: FileTableViewProps) {
+export function FileTableView({ files, loading, deletingUrl, onDelete, onDownload, onRefresh }: FileTableViewProps) {
   if (loading) {
     return (
       <Card className="bg-zinc-800 border-zinc-700">
@@ -90,17 +91,17 @@ export function FileTableView({ files, loading, deletingUrl, onDelete, onRefresh
                     <TableCell className="text-zinc-300">{formatDate(file.uploadedAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <a
-                          href={file.url}
-                          download
+                        <button
+                          type="button"
+                          onClick={() => onDownload(file)}
                           className="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                         >
                           ⬇️ Scarica
-                        </a>
+                        </button>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => onDelete(file.url, file.filename)}
+                          onClick={() => onDelete(file)}
                           disabled={deletingUrl === file.url}
                         >
                           {deletingUrl === file.url ? '...' : '🗑️ Elimina'}

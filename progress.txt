@@ -1,12 +1,12 @@
 ## Codebase Patterns
-- ExcelJS writeBuffer() requires `as unknown as Promise<Buffer>` cast to satisfy strict TypeScript generics
-- Admin pages always gate on token URL param — show "Accesso Negato" if missing, same pattern across all admin pages
-- Email functions use RESEND_FROM_EMAIL env var with fallback 'onboarding@resend.dev'; fire-and-forget with .catch() in routes
-- Blob paths: config at 'config/valuation-parameters.json', streets at 'streets/<city-slug>.json'
-- City slug: lowercase with hyphens (e.g. 'locate-di-triulzi') — use cityToSlug() from @/lib/cities
-- ALLOWED_CITIES is the canonical city list in lib/cities.ts — import from there, never redeclare locally
-- ValuationCoefficientTables has no index signature — use `as unknown as Record<string, unknown>` for dynamic key access
-- admin/config/route.ts percentageFields Omit must exclude 'coefficienti' to avoid type error on numeric comparison
+- Enum e schemi zod dei form in lib/schema.ts (unica fonte, usata da client e API) — mai ridefinire z.enum altrove
+- Prezzo €/mq SEMPRE calcolato lato server (getPriceForStreet); form-2 verifica il sessionToken HMAC (lib/session-token.ts) e ricalcola
+- Formula valutazione in lib/valuation.ts (funzioni pure, testate in tests/); Excel in lib/excel/valuation-report.ts
+- Admin API: requireAdmin(request) da lib/auth.ts, token in header Authorization: Bearer (client: adminFetch in components/admin/adminFetch.ts). Pagine /admin protette da proxy.ts (Next 16, ex middleware.ts)
+- Email: mittente da EMAIL_FROM; invio con after() di next/server (non promise fire-and-forget); escape HTML con esc()
+- Store Blob PRIVATO: mai access 'public' né fetch(blob.url). JSON con readBlobJson/writeBlobJson (lib/blob-json-cache.ts), report con saveReport/readReport (lib/reports-storage.ts)
+- Blob paths: config 'config/valuation-parameters.json', strade 'streets/<city-slug>.json', report 'valutazioni/*.xlsx'
+- Quality gate: npm run lint && npm run typecheck && npm test
 
 ---
 

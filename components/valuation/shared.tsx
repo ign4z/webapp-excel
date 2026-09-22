@@ -326,7 +326,7 @@ export function PrimaryButton({
         disabled={disabled}
         onClick={onClick}
         className="vl-btn-primary"
-        style={{ ['--btn-width' as any]: fullWidth ? '100%' : 'auto' }}
+        style={{ '--btn-width': fullWidth ? '100%' : 'auto' } as React.CSSProperties}
       >
         {children}
       </button>

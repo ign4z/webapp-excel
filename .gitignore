@@ -37,3 +37,6 @@ yarn-error.log*
 
 # config locale
 config-local.json
+
+# typescript
+*.tsbuildinfo

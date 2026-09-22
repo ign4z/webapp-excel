@@ -1,6 +1,6 @@
 'use client';
 
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, useWatch } from 'react-hook-form';
 import ReCAPTCHA from 'react-google-recaptcha';
 import {
   PageShell,
@@ -33,7 +33,8 @@ export interface Step1FormValues {
 
 interface Step1ViewProps {
   form: UseFormReturn<Step1FormValues>;
-  addressRef: React.RefObject<HTMLInputElement | null>;
+  /** Riceve l'elemento input indirizzo (per agganciare Google Places Autocomplete) */
+  onAddressRef: (el: HTMLInputElement | null) => void;
   isLoading: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onRecaptchaChange: (token: string | null) => void;
@@ -41,18 +42,19 @@ interface Step1ViewProps {
 
 export function Step1View({
   form,
-  addressRef,
+  onAddressRef,
   isLoading,
   onSubmit,
   onRecaptchaChange,
 }: Step1ViewProps) {
   const {
     register,
+    control,
     formState: { errors },
-    watch,
   } = form;
 
-  const selectedCity = watch('city');
+  // useWatch (non watch()): con il React Compiler watch() non fa ri-renderizzare il componente
+  const selectedCity = useWatch({ control, name: 'city' });
 
   return (
     <PageShell>
@@ -166,12 +168,12 @@ export function Step1View({
                   {...register('address')}
                   ref={(e) => {
                     register('address').ref(e);
-                    (addressRef as React.MutableRefObject<HTMLInputElement | null>).current = e;
+                    onAddressRef(e);
                   }}
                 />
                 {selectedCity && (
                   <span className="address-hint">
-                    Seleziona l'indirizzo dal menu a tendina
+                    Seleziona l&apos;indirizzo dal menu a tendina
                   </span>
                 )}
               </FieldGroup>

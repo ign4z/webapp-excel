@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { list, put } from '@vercel/blob';
+import { requireAdmin } from '@/lib/auth';
+import { readBlobJson, writeBlobJson } from '@/lib/blob-json-cache';
 import { ALLOWED_CITIES, cityToSlug } from '@/lib/cities';
 import { invalidateStreetCache, getSeedStreetPrices } from '@/lib/streets';
 import { createLogger } from '@/lib/logger';
@@ -8,20 +9,16 @@ const log = createLogger('api/admin/streets');
 
 const SUPPORTED_CITIES = ALLOWED_CITIES.map(cityToSlug);
 
-function isAuthorized(request: NextRequest): boolean {
-  const token = request.nextUrl.searchParams.get('token');
-  return token === process.env.ADMIN_TOKEN;
-}
-
 // Regex separata dalla whitelist: blocca path traversal e slug malformati prima dell'includes()
 function isCityValid(city: string): boolean {
   return /^[a-z0-9-]+$/.test(city) && SUPPORTED_CITIES.includes(city);
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  const denied = requireAdmin(request);
+  if (denied) {
     log.warn('Unauthorized GET streets attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return denied;
   }
 
   const city = request.nextUrl.searchParams.get('city') ?? '';
@@ -32,15 +29,12 @@ export async function GET(request: NextRequest) {
 
   log.debug('Admin streets GET', { city });
   try {
-    const { blobs } = await list({ prefix: `streets/${city}.json`, limit: 1 });
-
-    if (blobs.length === 0) {
+    const data = await readBlobJson<Record<string, number>>(`streets/${city}.json`);
+    if (!data) {
       log.debug('Streets blob not found, returning seed data', { city });
       return NextResponse.json({ data: getSeedStreetPrices(city) });
     }
 
-    const response = await fetch(blobs[0].url, { cache: 'no-store' });
-    const data = await response.json();
     return NextResponse.json({ data });
   } catch (error) {
     log.error('Admin streets GET error', error instanceof Error ? error.message : error);
@@ -49,9 +43,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  const denied = requireAdmin(request);
+  if (denied) {
     log.warn('Unauthorized POST streets attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return denied;
   }
 
   const city = request.nextUrl.searchParams.get('city') ?? '';
@@ -85,11 +80,7 @@ export async function POST(request: NextRequest) {
       normalized[key.toLowerCase().trim()] = value;
     }
 
-    await put(`streets/${city}.json`, JSON.stringify(normalized, null, 2), {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-      allowOverwrite: true,
-    });
+    await writeBlobJson(`streets/${city}.json`, normalized);
 
     invalidateStreetCache(city);
     log.info('Streets saved and cache invalidated', { city, entries: Object.keys(normalized).length });

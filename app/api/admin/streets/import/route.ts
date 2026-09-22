@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { list, put } from '@vercel/blob';
+import { requireAdmin } from '@/lib/auth';
+import { writeBlobJson } from '@/lib/blob-json-cache';
 import ExcelJS from 'exceljs';
 import { ALLOWED_CITIES, cityToSlug } from '@/lib/cities';
 import { invalidateStreetCache } from '@/lib/streets';
@@ -11,15 +12,11 @@ const SUPPORTED_CITIES = ALLOWED_CITIES.map(cityToSlug);
 const MAX_ROWS = 1000;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
-function isAuthorized(request: NextRequest): boolean {
-  const token = request.nextUrl.searchParams.get('token');
-  return token === process.env.ADMIN_TOKEN;
-}
-
 export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  const denied = requireAdmin(request);
+  if (denied) {
     log.warn('Unauthorized streets import attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return denied;
   }
 
   const city = request.nextUrl.searchParams.get('city') ?? '';
@@ -116,11 +113,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    await put(`streets/${city}.json`, JSON.stringify(merged, null, 2), {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-      allowOverwrite: true,
-    });
+    await writeBlobJson(`streets/${city}.json`, merged);
 
     invalidateStreetCache(city);
     log.info('Streets import complete', { city, importedStreets, importedCivics, skipped, errors: errors.length });

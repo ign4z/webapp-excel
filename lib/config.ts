@@ -1,4 +1,4 @@
-import { list } from '@vercel/blob';
+import { readBlobJson, invalidateBlobJson } from '@/lib/blob-json-cache';
 import { createLogger } from '@/lib/logger';
 import rawDefaults from '@/lib/config.defaults.json';
 
@@ -165,65 +165,37 @@ export type ValuationConfig = {
 
 export const defaultConfig: ValuationConfig = rawDefaults as ValuationConfig;
 
-/* ─── Cache in-memory: valida finché il blob non cambia (confronto su uploadedAt) ─── */
-let cachedConfig: ValuationConfig | null = null;
-let cachedBlobVersion: number | null = null; // uploadedAt del blob, ms
-
 export function invalidateConfigCache(): void {
-  cachedConfig = null;
-  cachedBlobVersion = null;
+  invalidateBlobJson(CONFIG_PATH);
   log.info('Config cache invalidated');
+}
+
+/** Deep-merge per tabella dei coefficienti: una tabella parziale non cancella le chiavi di default. */
+export function mergeWithDefaults(remote: Partial<ValuationConfig>): ValuationConfig {
+  const merged: ValuationConfig = { ...defaultConfig, ...remote, coefficienti: { ...defaultConfig.coefficienti } };
+  if (remote.coefficienti && typeof remote.coefficienti === 'object') {
+    for (const tableKey of Object.keys(defaultConfig.coefficienti) as (keyof ValuationCoefficientTables)[]) {
+      (merged.coefficienti as unknown as Record<string, unknown>)[tableKey] = {
+        ...defaultConfig.coefficienti[tableKey],
+        ...(remote.coefficienti[tableKey] ?? {}),
+      };
+    }
+  }
+  return merged;
 }
 
 /**
  * Loads valuation config from Vercel Blob; falls back to defaultConfig if blob is missing or fetch fails.
- *
- * Ogni chiamata fa un list() leggero per controllare uploadedAt del blob.
- * Il JSON completo viene scaricato solo al cold start o dopo un salvataggio admin.
- * Il campo `coefficienti` viene deep-merged per tabella, non sovritto intero.
+ * Il JSON viene riscaricato solo quando il blob cambia (vedi lib/blob-json-cache.ts).
  */
 export async function getValuationConfig(): Promise<ValuationConfig> {
   try {
-    const { blobs } = await list({ prefix: CONFIG_PATH, limit: 1 });
-
-    if (blobs.length === 0) {
+    const remote = await readBlobJson<Partial<ValuationConfig>>(CONFIG_PATH);
+    if (!remote) {
       log.warn('Config blob not found, using defaults');
       return defaultConfig;
     }
-
-    const blob = blobs[0];
-    const blobVersion = blob.uploadedAt.getTime();
-
-    if (cachedConfig && cachedBlobVersion === blobVersion) {
-      log.trace('Config cache hit (blob version unchanged)');
-      return cachedConfig;
-    }
-
-    log.debug('Config changed or cold start, fetching from blob');
-    const response = await fetch(blob.url, { cache: 'no-store' });
-
-    if (!response.ok) {
-      log.warn('Config blob fetch failed, using defaults', { status: response.status });
-      return defaultConfig;
-    }
-
-    const remote = await response.json();
-
-    // Shallow merge for top-level fields; deep merge coefficienti per sub-table
-    const merged: ValuationConfig = { ...defaultConfig, ...remote };
-    if (remote.coefficienti && typeof remote.coefficienti === 'object') {
-      merged.coefficienti = {} as ValuationCoefficientTables;
-      for (const tableKey of Object.keys(defaultConfig.coefficienti) as (keyof ValuationCoefficientTables)[]) {
-        const defaultTable = defaultConfig.coefficienti[tableKey] as Record<string, number>;
-        const remoteTable = (remote.coefficienti[tableKey] ?? {}) as Record<string, number>;
-        (merged.coefficienti as unknown as Record<string, unknown>)[tableKey] = { ...defaultTable, ...remoteTable };
-      }
-    }
-
-    cachedConfig = merged;
-    cachedBlobVersion = blobVersion;
-    log.info('Config loaded from blob', { version: new Date(blobVersion).toISOString() });
-    return cachedConfig!;
+    return mergeWithDefaults(remote);
   } catch (error) {
     log.warn('Error loading config, using defaults', error instanceof Error ? error.message : error);
     return defaultConfig;

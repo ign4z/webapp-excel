@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
-import { getValuationConfig, defaultConfig, ValuationConfig, invalidateConfigCache } from '@/lib/config';
+import { requireAdmin } from '@/lib/auth';
+import { writeBlobJson } from '@/lib/blob-json-cache';
+import { getValuationConfig, defaultConfig, mergeWithDefaults, invalidateConfigCache } from '@/lib/config';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api/admin/config');
 
 const CONFIG_PATH = 'config/valuation-parameters.json';
 
-/* ─── Auth helper ─── */
-function isAuthorized(request: NextRequest): boolean {
-  const token = request.nextUrl.searchParams.get('token');
-  return token === process.env.ADMIN_TOKEN;
-}
-
 /* ─── GET /api/admin/config?token=SECRET ─── */
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  const denied = requireAdmin(request);
+  if (denied) {
     log.warn('Unauthorized GET config attempt');
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    return denied;
   }
 
   try {
@@ -32,9 +28,10 @@ export async function GET(request: NextRequest) {
 
 /* ─── POST /api/admin/config?token=SECRET ─── */
 export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  const denied = requireAdmin(request);
+  if (denied) {
     log.warn('Unauthorized POST config attempt');
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    return denied;
   }
 
   try {
@@ -53,8 +50,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Merge con i default per campi mancanti
-    const newConfig: ValuationConfig = { ...defaultConfig, ...body };
+    // Merge con i default per campi mancanti (deep merge per tabella coefficienti, come in lettura)
+    const newConfig = mergeWithDefaults(body);
 
     // Validate pricePerSqmByCity
     if (!newConfig.pricePerSqmByCity || typeof newConfig.pricePerSqmByCity !== 'object') {
@@ -73,9 +70,18 @@ export async function POST(request: NextRequest) {
     // Validate coefficienti: each sub-key value must be in [0.01, 5.00]
     if (body.coefficienti && typeof body.coefficienti === 'object') {
       const errors: string[] = [];
+      const defaultTables = defaultConfig.coefficienti as unknown as Record<string, Record<string, number>>;
       for (const [table, tableValues] of Object.entries(body.coefficienti as Record<string, unknown>)) {
+        if (!(table in defaultTables)) {
+          errors.push(`coefficienti.${table}: tabella sconosciuta`);
+          continue;
+        }
         if (typeof tableValues !== 'object' || tableValues === null) continue;
         for (const [key, val] of Object.entries(tableValues as Record<string, unknown>)) {
+          if (!(key in defaultTables[table])) {
+            errors.push(`coefficienti.${table}.${key}: chiave sconosciuta`);
+            continue;
+          }
           if (typeof val !== 'number' || !Number.isFinite(val) || val < 0.01 || val > 5.00) {
             errors.push(`coefficienti.${table}.${key}: valore ${val} fuori range [0.01, 5.00]`);
           }
@@ -86,11 +92,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await put(CONFIG_PATH, JSON.stringify(newConfig, null, 2), {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-      allowOverwrite: true,
-    });
+    await writeBlobJson(CONFIG_PATH, newConfig);
 
     invalidateConfigCache();
     log.info('Config saved and cache invalidated');

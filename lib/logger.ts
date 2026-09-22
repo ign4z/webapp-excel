@@ -1,4 +1,5 @@
-import { put, list } from '@vercel/blob';
+// In produzione ogni riga è JSON su stdout/stderr: la raccolgono i Runtime Logs di Vercel
+// (filtrabili per livello/ctx, esportabili con un Log Drain). In sviluppo anche su logs/app.log.
 
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
@@ -49,7 +50,8 @@ function writeConsole(entry: LogEntry): void {
   } else {
     const time = entry.ts.slice(11, 23);
     const tag = `${LEVEL_EMOJI[entry.level]} [${time}] ${entry.level.toUpperCase().padEnd(5)} [${entry.ctx}]`;
-    entry.data !== undefined ? fn(tag, entry.msg, entry.data) : fn(tag, entry.msg);
+    if (entry.data !== undefined) fn(tag, entry.msg, entry.data);
+    else fn(tag, entry.msg);
   }
 }
 
@@ -68,33 +70,6 @@ try {
     try { fs.appendFileSync(logFile, line + '\n'); } catch { /* ignore */ }
   };
 } catch { /* Edge Runtime or fs unavailable */ }
-
-/* ─── Vercel Blob output (prod, opt-in via LOG_BLOB_ENABLED=true) ─── */
-// Writes are serialized in a per-instance Promise chain to reduce concurrent append conflicts.
-// Each day gets its own JSONL file: logs/YYYY-MM-DD.jsonl
-let _blobQueue: Promise<void> = Promise.resolve();
-
-function writeBlobAsync(entry: LogEntry): void {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return;
-  _blobQueue = _blobQueue.then(async () => {
-    try {
-      const date = entry.ts.slice(0, 10);
-      const blobPath = `logs/${date}.jsonl`;
-      const line = JSON.stringify(entry) + '\n';
-      const { blobs } = await list({ prefix: blobPath, limit: 1 });
-      let existing = '';
-      if (blobs.length > 0) {
-        const res = await fetch(blobs[0].url, { cache: 'no-store' });
-        if (res.ok) existing = await res.text();
-      }
-      await put(blobPath, existing + line, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-        allowOverwrite: true,
-      });
-    } catch { /* silently ignore blob errors to never break the application */ }
-  });
-}
 
 /* ─── Logger ─── */
 export class Logger {
@@ -118,8 +93,6 @@ export class Logger {
     writeConsole(entry);
     if (process.env.NODE_ENV !== 'production') {
       _writeToFile?.(JSON.stringify(entry));
-    } else if (process.env.LOG_BLOB_ENABLED === 'true') {
-      writeBlobAsync(entry);
     }
   }
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ALLOWED_CITIES } from '@/lib/cities';
 import { StreetsEditorView } from './StreetsEditorView';
+import { adminFetch } from '@/components/admin/adminFetch';
 
 interface StreetRow {
   key: string;
@@ -45,7 +46,7 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
     setLoading(true);
     setMessage('');
     try {
-      const res = await fetch(`/api/admin/streets?token=${token}&city=${city}`);
+      const res = await adminFetch(token, `/api/admin/streets?city=${city}`);
       if (res.ok) {
         const { data } = await res.json();
         const allEntries = Object.entries(data as Record<string, number>)
@@ -89,7 +90,7 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
     setSaving(true);
     setMessage('');
     try {
-      const res = await fetch(`/api/admin/streets?token=${token}&city=${city}`, {
+      const res = await adminFetch(token, `/api/admin/streets?city=${city}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildSaveBody()),
@@ -110,7 +111,7 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
 
   async function handleDownloadTemplate() {
     try {
-      const res = await fetch(`/api/admin/streets/template?token=${token}&city=${city}`);
+      const res = await adminFetch(token, `/api/admin/streets/template?city=${city}`);
       if (!res.ok) { setImportMsg('❌ Errore download template'); return; }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -131,7 +132,7 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch(`/api/admin/streets/import?token=${token}&city=${city}`, {
+      const res = await adminFetch(token, `/api/admin/streets/import?city=${city}`, {
         method: 'POST',
         body: formData,
       });

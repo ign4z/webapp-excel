@@ -3,13 +3,29 @@ import { createLogger } from '@/lib/logger';
 
 const log = createLogger('lib/email');
 
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Valutazione Immobiliare <onboarding@resend.dev>';
+
 function getResendClient() {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('⚠️ RESEND_API_KEY non configurato');
+    log.warn('RESEND_API_KEY non configurato');
     return null;
   }
   return new Resend(process.env.RESEND_API_KEY);
 }
+
+/** Escape dei dati inseriti dall'utente prima di interpolarli nell'HTML delle email. */
+function esc(value: string | number): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const eur = (n: number) => `€${n.toLocaleString('it-IT')}`;
+
+type Attachment = { filename: string; content: Buffer };
 
 /**
  * Invia email dopo Form 1 con la stima preliminare. Richiede RESEND_API_KEY; se assente, restituisce errore senza eccezione.
@@ -34,7 +50,7 @@ export async function sendForm1Email(params: {
 
     log.info('Sending Form1 email', { to: params.email });
     const { data, error } = await resend.emails.send({
-      from: 'Valutazione Immobiliare <onboarding@resend.dev>',
+      from: EMAIL_FROM,
       to: params.email,
       subject: 'La tua stima immobiliare preliminare',
       html: `
@@ -63,7 +79,7 @@ export async function sendForm1Email(params: {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Ciao ${params.firstName},</h1>
+              <h1>Ciao ${esc(params.firstName)},</h1>
               <p>Ecco la tua stima immobiliare preliminare</p>
             </div>
             <div class="content">
@@ -71,9 +87,9 @@ export async function sendForm1Email(params: {
 
               <div class="estimate-box">
                 <table>
-                  <tr><td>Comune</td><td>${params.city}</td></tr>
-                  <tr><td>Indirizzo</td><td>${params.address}</td></tr>
-                  <tr><td>Superficie</td><td>${params.squareMeters} mq</td></tr>
+                  <tr><td>Comune</td><td>${esc(params.city)}</td></tr>
+                  <tr><td>Indirizzo</td><td>${esc(params.address)}</td></tr>
+                  <tr><td>Superficie</td><td>${esc(params.squareMeters)} mq</td></tr>
                   <tr><td>Prezzo al mq</td><td>€${params.pricePerSqm.toLocaleString('it-IT')}</td></tr>
                 </table>
                 <div style="border-top: 1px solid #EDE8DF; margin-top: 16px; padding-top: 16px;">
@@ -108,63 +124,43 @@ export async function sendForm1Email(params: {
 }
 
 /**
- * Invia email di conferma ordine dopo Form 2. Richiede RESEND_API_KEY.
+ * Invia al cliente la valutazione definitiva (Step 2) con il report Excel allegato. Non lancia eccezioni.
  */
-export async function sendForm2Email(
-  email: string,
-  name: string,
-  company: string,
-  excelUrl: string
-) {
+export async function sendForm2Email(params: {
+  email: string;
+  firstName: string;
+  city: string;
+  address: string;
+  squareMeters: number;
+  finalValue: number;
+  attachment: Attachment;
+}) {
   try {
     const resend = getResendClient();
-    if (!resend) {
-      return { success: false, error: 'Resend non configurato' };
-    }
+    if (!resend) return { success: false, error: 'Resend non configurato' };
 
-    log.info('Sending Form2 email', { to: email });
+    log.info('Sending Form2 email', { to: params.email });
     const { data, error } = await resend.emails.send({
-      from: 'WebApp <noreply@tuodominio.com>',
-      to: email,
-      subject: '✅ Ordine Confermato - Riepilogo Allegato',
+      from: EMAIL_FROM,
+      to: params.email,
+      subject: 'La tua valutazione immobiliare definitiva',
+      attachments: [params.attachment],
       html: `
         <!DOCTYPE html>
         <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #28a745; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-            .success-icon { font-size: 64px; margin: 20px 0; }
-            .button { display: inline-block; background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="success-icon">✅</div>
-              <h1>Ordine Confermato!</h1>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1E2230; margin: 0; padding: 0;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: #1E2230; color: white; padding: 28px 32px; border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0 0 4px; font-size: 22px;">Ciao ${esc(params.firstName)},</h1>
+              <p style="margin: 0; color: #A0A8BC; font-size: 14px;">Ecco la valutazione definitiva del tuo immobile</p>
             </div>
-            <div class="content">
-              <p>Ciao <strong>${name}</strong>,</p>
-              
-              <p>Il tuo ordine per <strong>${company}</strong> è stato registrato con successo.</p>
-
-              <p>Puoi scaricare il riepilogo completo in formato Excel cliccando qui:</p>
-              
-              <a href="${excelUrl}" class="button" download>
-                📥 Scarica Riepilogo Excel
-              </a>
-
-              <p style="margin-top: 30px;">
-                Ti contatteremo presto per confermare i dettagli.
-              </p>
-
-              <p style="margin-top: 30px; font-size: 12px; color: #666;">
-                Hai domande? Rispondi a questa email o contattaci su support@tuodominio.com
-              </p>
+            <div style="background: #FAFAF8; padding: 32px; border-radius: 0 0 8px 8px; border: 1px solid #EDE8DF; border-top: none;">
+              <p>${esc(params.address)} — ${esc(params.city)} — ${esc(params.squareMeters)} mq</p>
+              <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px;">Valore stimato</p>
+              <p style="font-size: 28px; font-weight: 700; color: #9A7535; margin: 0 0 20px;">${eur(params.finalValue)}</p>
+              <p>In allegato trovi il report Excel con il dettaglio di tutti i coefficienti applicati.</p>
+              <p style="font-size: 12px; color: #9CA3AF; margin-top: 28px;">Questa email è stata inviata automaticamente. Non rispondere a questo messaggio.</p>
             </div>
           </div>
         </body>
@@ -179,7 +175,6 @@ export async function sendForm2Email(
 
     log.info('Form2 email sent', { id: data?.id });
     return { success: true, data };
-
   } catch (error) {
     log.error('Form2 email exception', error instanceof Error ? error.message : error);
     return { success: false, error };
@@ -187,37 +182,53 @@ export async function sendForm2Email(
 }
 
 /**
- * Notifica l'admin di un nuovo ordine. Fire-and-forget: non restituisce dati, le eccezioni vengono solo loggato.
- * Destinatario letto da ADMIN_EMAIL (fallback: admin@tuodominio.com). Richiede RESEND_API_KEY.
+ * Notifica l'admin di una nuova valutazione definitiva, con report allegato. Non lancia eccezioni.
+ * Destinatario letto da ADMIN_EMAIL; se assente la notifica viene saltata.
  */
-export async function sendAdminNotification(
-  userEmail: string,
-  userName: string,
-  company: string
-) {
+export async function sendAdminNotification(params: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  city: string;
+  address: string;
+  squareMeters: number;
+  finalValue: number;
+  attachment: Attachment;
+}) {
   try {
     const resend = getResendClient();
-    if (!resend) {
-      console.warn('⚠️ Notifica admin saltata: Resend non configurato');
+    const to = process.env.ADMIN_EMAIL;
+    if (!resend || !to) {
+      log.warn('Notifica admin saltata: Resend o ADMIN_EMAIL non configurati');
       return;
     }
 
-    log.info('Sending admin notification', { from: userName });
-    await resend.emails.send({
-      from: 'WebApp <noreply@tuodominio.com>',
-      to: process.env.ADMIN_EMAIL || 'admin@tuodominio.com',
-      subject: `🆕 Nuovo ordine da ${userName}`,
+    log.info('Sending admin notification');
+    const { error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to,
+      replyTo: params.email,
+      subject: `Nuova valutazione: ${params.firstName} ${params.lastName} — ${params.city}`,
+      attachments: [params.attachment],
       html: `
-        <h2>Nuovo ordine ricevuto</h2>
+        <h2>Nuova valutazione definitiva</h2>
         <ul>
-          <li><strong>Cliente:</strong> ${userName}</li>
-          <li><strong>Email:</strong> ${userEmail}</li>
-          <li><strong>Azienda:</strong> ${company}</li>
-          <li><strong>Data:</strong> ${new Date().toLocaleString('it-IT')}</li>
+          <li><strong>Cliente:</strong> ${esc(params.firstName)} ${esc(params.lastName)}</li>
+          <li><strong>Email:</strong> ${esc(params.email)}</li>
+          <li><strong>Telefono:</strong> ${esc(params.phone)}</li>
+          <li><strong>Immobile:</strong> ${esc(params.address)}, ${esc(params.city)} (${esc(params.squareMeters)} mq)</li>
+          <li><strong>Valore stimato:</strong> ${eur(params.finalValue)}</li>
+          <li><strong>Data:</strong> ${new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}</li>
         </ul>
+        <p>Report Excel in allegato (disponibile anche nel pannello admin).</p>
       `,
     });
-    
+
+    if (error) {
+      log.error('Admin notification failed', error);
+      return;
+    }
     log.info('Admin notification sent');
   } catch (error) {
     log.error('Admin notification failed', error instanceof Error ? error.message : error);

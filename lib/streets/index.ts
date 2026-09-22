@@ -1,4 +1,4 @@
-import { list } from '@vercel/blob';
+import { readBlobJson, invalidateBlobJson } from '@/lib/blob-json-cache';
 import { cityToSlug } from '@/lib/cities';
 import { createLogger } from '@/lib/logger';
 
@@ -24,19 +24,13 @@ const SEED_MAP: Record<string, SeedModule> = {
   'carpiano': carpiano,
 };
 
-// Cache in-memory senza TTL: caricata al primo accesso, invalidata manualmente
-// dopo ogni salvataggio admin tramite invalidateStreetCache()
-const streetCache: Map<string, Record<string, number>> = new Map();
+const blobPath = (slug: string) => `streets/${slug}.json`;
 
-// Esposta alle route admin per resettare la cache dopo un salvataggio
+// La cache vive in lib/blob-json-cache.ts e si invalida da sola quando il blob cambia (uploadedAt).
+// Questa funzione serve solo a rileggere subito sull'istanza che ha appena salvato.
 export function invalidateStreetCache(slug?: string): void {
-  if (slug) {
-    streetCache.delete(slug);
-    log.info('Street cache invalidated', { slug });
-  } else {
-    streetCache.clear();
-    log.info('Street cache cleared (all cities)');
-  }
+  invalidateBlobJson(slug ? blobPath(slug) : undefined);
+  log.info('Street cache invalidated', { slug: slug ?? 'all' });
 }
 
 // Usata dalle route admin come fallback quando il blob non esiste ancora per una città
@@ -50,13 +44,13 @@ export function extractStreetName(formattedAddress: string): string {
   return formattedAddress.split(',')[0].trim().toLowerCase();
 }
 
-// Il civico è il secondo segmento solo se è puramente numerico
-// (alcuni indirizzi hanno suffissi tipo "15/A" che non vanno usati come chiave civico)
+// Il civico è il secondo segmento se inizia con un numero: "15/A", "15 bis" → "15"
+// (le chiavi civico nel blob sono solo numeriche, es. "via roma:15")
 export function extractCivicNumber(formattedAddress: string): string | null {
   const parts = formattedAddress.split(',');
   if (parts.length < 2) return null;
-  const segment = parts[1].trim();
-  return /^\d+$/.test(segment) ? segment : null;
+  const match = parts[1].trim().match(/^(\d+)/);
+  return match ? match[1] : null;
 }
 
 // Priorità lookup: "via roma:15" > "via roma" > defaultPrice del seed > 2000 globale
@@ -73,36 +67,16 @@ export async function getPriceForStreet(
 
   log.debug('Price lookup', { address: formattedAddress, city, slug });
 
-  const cached = streetCache.get(slug);
-  if (cached) {
-    const price = lookupPrice(cached, streetName, civicNumber, seed, globalDefault);
-    log.trace('Street cache hit', { slug, price });
-    return price;
-  }
-
-  log.debug('Street cache miss, loading from blob', { slug });
+  let streetMap: Record<string, number> | null = null;
   try {
-    const { blobs } = await list({ prefix: `streets/${slug}.json`, limit: 1 });
-
-    if (blobs.length > 0) {
-      const response = await fetch(blobs[0].url, { cache: 'no-store' });
-      if (response.ok) {
-        const data: Record<string, number> = await response.json();
-        streetCache.set(slug, data);
-        const price = lookupPrice(data, streetName, civicNumber, seed, globalDefault);
-        log.debug('Streets loaded from blob', { slug, price });
-        return price;
-      }
-    }
-    log.warn('Streets blob not found, falling back to seed', { slug });
+    streetMap = await readBlobJson<Record<string, number>>(blobPath(slug));
+    if (!streetMap) log.warn('Streets blob not found, falling back to seed', { slug });
   } catch (err) {
     log.warn('Streets blob fetch error, falling back to seed', { slug, error: err instanceof Error ? err.message : err });
   }
 
-  const seedData = seed?.streetPrices ?? {};
-  streetCache.set(slug, seedData);
-  const price = lookupPrice(seedData, streetName, civicNumber, seed, globalDefault);
-  log.debug('Using seed data', { slug, price });
+  const price = lookupPrice(streetMap ?? seed?.streetPrices ?? {}, streetName, civicNumber, seed, globalDefault);
+  log.debug('Price resolved', { slug, price, source: streetMap ? 'blob' : 'seed' });
   return price;
 }
 

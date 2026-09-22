@@ -2,25 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { form1Schema } from '@/lib/schema';
 import { toast } from '@/hooks/use-toast';
 import { Step1View, Step1FormValues } from '@/components/valuation/Step1View';
 
-const formSchema = z.object({
-  firstName: z.string().min(2, 'Il nome deve essere di almeno 2 caratteri'),
-  lastName: z.string().min(2, 'Il cognome deve essere di almeno 2 caratteri'),
-  email: z.string().email('Inserisci un email valida'),
-  phone: z.string().min(10, 'Inserisci un numero di telefono valido'),
-  city: z.string().min(1, 'Seleziona un comune'),
-  address: z.string().min(5, 'Inserisci un indirizzo valido'),
-  squareMeters: z.number().min(10, 'Minimo 10 mq'),
-  tipologia: z.enum(['appartamento', 'openspaceLoft', 'mansarda', 'attico', 'villettaSchiera', 'villa', 'rusticoCasale', 'stabilePalazzo']),
-  piano: z.enum(['interrato', 'seminterrato', 'pianoTerra', 'rialzato', 'piano1', 'piano2', 'piano3', 'piano4', 'piano5', 'piano6', 'piano7', 'piano8', 'piano9', 'piano10Plus']),
-  locali: z.enum(['locale1', 'locali2', 'locali3', 'locali4', 'locali5', 'locali6', 'locali7Plus']),
-  bagni: z.enum(['bagno1', 'bagni2', 'bagni3', 'bagni4', 'bagni5Plus']),
-});
 
 export default function Form1() {
   const router = useRouter();
@@ -39,7 +26,7 @@ export default function Form1() {
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<Step1FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(form1Schema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -55,7 +42,8 @@ export default function Form1() {
     },
   });
 
-  const selectedCity = form.watch('city');
+  // useWatch (non form.watch()): con il React Compiler watch() non fa ri-renderizzare il componente
+  const selectedCity = useWatch({ control: form.control, name: 'city' });
 
   // Ripristina i campi se l'utente torna da step-2 usando il pulsante indietro
   useEffect(() => {
@@ -197,7 +185,8 @@ export default function Form1() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
-      sessionStorage.setItem('form1Data', JSON.stringify(values));
+      // Salva la versione normalizzata dal server: il sessionToken è firmato su questi dati esatti
+      sessionStorage.setItem('form1Data', JSON.stringify(data.form1Data));
       sessionStorage.setItem('calculationResult', JSON.stringify(data.result));
       sessionStorage.setItem('sessionToken', data.sessionToken);
 
@@ -214,7 +203,7 @@ export default function Form1() {
   return (
     <Step1View
       form={form}
-      addressRef={addressRef}
+      onAddressRef={(el) => { addressRef.current = el; }}
       isLoading={isLoading}
       onSubmit={form.handleSubmit(onSubmit)}
       onRecaptchaChange={setRecaptchaToken}

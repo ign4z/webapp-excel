@@ -4,22 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { form2Schema } from '@/lib/schema';
 import { toast } from '@/hooks/use-toast';
 import { Step2View, Step2FormValues } from '@/components/valuation/Step2View';
 
-const formSchema = z.object({
-  stato: z.enum(['daRistrutturare', 'daRiattare', 'abitabile', 'buono', 'ottimo', 'ristrutturato', 'nuovo']),
-  classeEnergetica: z.enum(['G', 'F', 'E', 'D', 'C', 'B', 'A1', 'A2', 'A3', 'A4']),
-  annoCostruzione: z.enum(['prima1945', 'dal1945al1960', 'dal1961al1980', 'dal1981al2000', 'dal2001al2010', 'dal2011al2020', 'dal2021inPoi']),
-  ascensore: z.enum(['no', 'si']),
-  terrazzo: z.enum(['nessuno', 'balcone', 'balconiMultipli', 'terrazzoAbitabile', 'terrazzoPanoramico']),
-  giardino: z.enum(['nessuno', 'piccolo', 'medio', 'grande', 'importante']),
-  garage: z.enum(['nessuno', 'postoScoperto', 'postoCoperto', 'boxSingolo', 'boxDoppio']),
-  cantina: z.enum(['no', 'si']),
-  riscaldamento: z.enum(['assente', 'centralizzatoVecchio', 'centralizzatoContabilizzato', 'autonomo', 'autonomoCondensazione', 'pompaDiCalore', 'impiantoRadiante']),
-  notes: z.string().max(500).optional(),
-});
 
 export default function Form2Component() {
   const router = useRouter();
@@ -31,7 +19,7 @@ export default function Form2Component() {
   const [finalResult, setFinalResult] = useState<unknown>(null);
 
   const form = useForm<Step2FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(form2Schema),
     defaultValues: {
       stato: 'buono',
       classeEnergetica: 'D',
@@ -84,7 +72,7 @@ export default function Form2Component() {
       const response = await fetch('/api/form-2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, sessionToken, form1Data, calculationResult, recaptchaToken }),
+        body: JSON.stringify({ ...values, sessionToken, form1Data, recaptchaToken }),
       });
 
       const data = await response.json();

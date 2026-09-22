@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-type ToastActionElement = React.ReactElement<any>
+type ToastActionElement = React.ReactElement
 
 export type ToastProps = {
   id: string

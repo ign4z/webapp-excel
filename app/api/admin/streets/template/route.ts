@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { list } from '@vercel/blob';
+import { requireAdmin } from '@/lib/auth';
+import { readBlobJson } from '@/lib/blob-json-cache';
 import ExcelJS from 'exceljs';
 import { ALLOWED_CITIES, cityToSlug } from '@/lib/cities';
 import { getSeedStreetPrices } from '@/lib/streets';
@@ -9,16 +10,12 @@ const log = createLogger('api/admin/streets/template');
 
 const SUPPORTED_CITIES = ALLOWED_CITIES.map(cityToSlug);
 
-function isAuthorized(request: NextRequest): boolean {
-  const token = request.nextUrl.searchParams.get('token');
-  return token === process.env.ADMIN_TOKEN;
-}
-
 // Genera un file Excel precompilato con i prezzi attuali — usato come base per l'importazione
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  const denied = requireAdmin(request);
+  if (denied) {
     log.warn('Unauthorized template download attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return denied;
   }
 
   const city = request.nextUrl.searchParams.get('city') ?? '';
@@ -29,16 +26,8 @@ export async function GET(request: NextRequest) {
 
   log.info('Template download', { city });
   try {
-    let streetData: Record<string, number> = {};
-
-    const { blobs } = await list({ prefix: `streets/${city}.json`, limit: 1 });
-    if (blobs.length > 0) {
-      const response = await fetch(blobs[0].url, { cache: 'no-store' });
-      if (response.ok) streetData = await response.json();
-    } else {
-      // Blob non ancora creato: popola il template con i dati seed
-      streetData = getSeedStreetPrices(city);
-    }
+    // Blob non ancora creato: popola il template con i dati seed
+    const streetData = (await readBlobJson<Record<string, number>>(`streets/${city}.json`)) ?? getSeedStreetPrices(city);
 
     // Separa le chiavi via ("via roma") da quelle civico ("via roma:15")
     const streetEntries = Object.entries(streetData)
