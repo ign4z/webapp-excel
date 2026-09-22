@@ -1,6 +1,6 @@
 // Hook PostToolUse (Edit|Write) di Claude Code: lancia ESLint sul file appena modificato.
-// Se ci sono errori esce con codice 2: Claude Code rimanda l'output a Claude, che li corregge subito
-// (utile soprattutto nelle iterazioni Ralph in AFK). I warning non bloccano.
+// Se ci sono errori esce con codice 2: Claude Code rimanda l'output a Claude, che li corregge subito.
+// I warning non bloccano.
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 

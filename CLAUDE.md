@@ -55,4 +55,3 @@ Il coefficiente piano ha due tabelle (con/senza ascensore): per questo l'admin m
 - React Compiler attivo: per leggere valori del form durante il render usare `useWatch({ control, name })`, **mai** `form.watch()` (il componente memoizzato non si aggiornerebbe). `getValues()` va bene solo negli handler.
 - Nuovo comune: aggiungerlo in `lib/cities.ts` + seed `lib/streets/<slug>.json` + voce in `SEED_MAP`.
 - Nuovo coefficiente: array in `lib/schema.ts`, tipo e tabella in `lib/config.ts` + `config.defaults.json`, label in `lib/labels.ts`, riga in `computeValuation`, test in `tests/valuation.test.ts`.
-- Loop Ralph: PRD in `prd.json` e log in `progress.txt` nella radice; prompt in `scripts/ralph/CLAUDE.md`.
