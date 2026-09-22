@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { form1Schema } from '@/lib/schema';
+import { buildCanonicalAddress } from '@/lib/address';
 import { toast } from '@/hooks/use-toast';
 import { Step1View, Step1FormValues } from '@/components/valuation/Step1View';
 
@@ -128,11 +129,6 @@ export default function Form1() {
         options
       );
 
-      // Se l'utente modifica il testo dopo aver già selezionato dal dropdown, invalida il geocoding
-      addressRef.current.addEventListener('input', () => {
-        isAddressGeocodedRef.current = false;
-      });
-
       autocompleteRef.current.addListener('place_changed', () => {
         const place = autocompleteRef.current?.getPlace();
         if (!place?.address_components) {
@@ -150,16 +146,32 @@ export default function Form1() {
           return;
         }
 
+        // Salva la via canonica di Google (+ civico): stesso formato letto dal lookup prezzi lato server
+        const canonical = buildCanonicalAddress(place.address_components);
+        if (!canonical) {
+          form.setError('address', { type: 'manual', message: 'Seleziona un indirizzo con un nome di via' });
+          return;
+        }
+
         form.clearErrors('address');
-        form.setValue('address', place.formatted_address || '', { shouldValidate: true });
+        form.setValue('address', canonical, { shouldValidate: true });
         isAddressGeocodedRef.current = true;
         // Nuovo token per la sessione successiva (ogni selezione chiude la sessione corrente)
         sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
       });
     }
 
+    // Se l'utente modifica il testo dopo aver già selezionato dal dropdown, invalida il geocoding.
+    // Registrato qui (non in init) così il cleanup lo rimuove a ogni cambio città.
+    const input = addressRef.current;
+    const onInput = () => { isAddressGeocodedRef.current = false; };
+    input.addEventListener('input', onInput);
+
     init();
-    return () => { active = false; };
+    return () => {
+      active = false;
+      input.removeEventListener('input', onInput);
+    };
   }, [selectedCity, scriptLoaded]);
 
   async function onSubmit(values: Step1FormValues) {
