@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 Webapp di valutazione immobiliare (zona sud Milano) in due step, con pannello admin.
 Next.js 16 (App Router, React Compiler) + TypeScript strict, Vercel Blob, Resend, ExcelJS, zod 4.
 Codice, commenti, UI e messaggi di commit in **italiano**.
@@ -11,10 +13,23 @@ npm run dev         # http://localhost:3000
 npm run lint        # ESLint (deve restare a 0 errori)
 npm run typecheck   # tsc --noEmit
 npm test            # Vitest, test in tests/
+npx vitest run tests/valuation.test.ts        # singolo file
+npx vitest run -t "nome del test"             # singolo test per nome
 npm run build
 ```
 
 Prima di considerare finito un lavoro: `npm run lint && npm run typecheck && npm test`.
+Un hook PostToolUse (`.claude/settings.json` → `scripts/hooks/lint-edited.mjs`) lancia ESLint su ogni file modificato: gli errori bloccano e vanno corretti subito.
+Variabili d'ambiente: vedi `.env.example` / README. In locale le chiamate Blob funzionano con `BLOB_READ_WRITE_TOKEN` in `.env.local`.
+
+## Flusso Step 1 → Step 2
+
+1. `components/forms/Form1.tsx` → `POST /api/form-1`: rate limit per IP (`lib/rate-limit.ts`, Upstash o in memoria), reCAPTCHA (`lib/recaptcha.ts`), whitelist comuni, prezzo €/mq da `getPriceForStreet`, email preliminare in `after()`. Risponde con `form1Data`, `result` e un `sessionToken` HMAC.
+2. Il client salva i tre valori in `sessionStorage` e naviga su `/step-2`.
+3. `Form2.tsx` → `POST /api/form-2` con `form1Data` + `sessionToken`: il server verifica il token, ricalcola il prezzo, applica `computeValuation`, genera l'Excel, lo salva e lo invia via email (cliente + `ADMIN_EMAIL`).
+
+Lookup prezzo €/mq: chiave civico (`via roma:15`) → chiave via (`via roma`) → default comune → fallback globale.
+Il coefficiente piano ha due tabelle (con/senza ascensore): per questo l'admin mostra 14 tabelle per 13 coefficienti.
 
 ## Architettura
 
