@@ -219,7 +219,7 @@ I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in 
 1. Collega il repository a Vercel dal dashboard
 2. Crea uno **Storage Blob** nel progetto Vercel e copia il token generato
 3. Aggiungi tutte le variabili d'ambiente in Settings → Environment Variables
-4. `git push` su `main` — il deploy avviene automaticamente
+4. `git push` su `master` — il deploy avviene automaticamente
 
 **Primo avvio:** se non esistono blob per configurazioni o prezzi strade, vengono usati i valori di default da `lib/config.defaults.json` e i seed da `lib/streets/*.json`. Non è necessaria nessuna migrazione dati iniziale.
 
