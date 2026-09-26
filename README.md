@@ -1,5 +1,7 @@
 # Webapp Valutazione Immobiliare
 
+**Versione 0.9.0** — vedi [CHANGELOG.md](CHANGELOG.md) per le novità di ogni release.
+
 Applicazione web per la stima del valore di immobili residenziali nella zona sud di Milano. Permette all'utente di ottenere una valutazione in due step e all'admin di gestire prezzi e configurazioni tramite un pannello dedicato.
 
 ## Overview
@@ -49,7 +51,7 @@ npm run dev        # avvia il server su http://localhost:3000
 npm run build      # build di produzione
 npm run lint       # ESLint
 npm run typecheck  # typecheck TypeScript
-npm test           # test unitari (Vitest, cartella tests/)
+npm test           # test Vitest (cartella tests/): valutazione, strade, sicurezza, API form, import Excel, report
 ```
 
 Il server di sviluppo supporta hot reload. Le chiamate ai blob Vercel funzionano anche in locale se `BLOB_READ_WRITE_TOKEN` è configurato in `.env.local`.
@@ -211,6 +213,15 @@ L'editor strade (`/admin/streets`) permette di:
 | Carpiano | `carpiano` | 1.600 |
 
 I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in `lib/cities.ts` — aggiungere un comune richiede solo una modifica lì + un seed file in `lib/streets/`.
+
+## Versioni e rilascio
+
+1. Aggiornare `version` in `package.json` (`npm version <x.y.z> --no-git-tag-version`)
+2. Aggiungere la voce corrispondente in `CHANGELOG.md`
+3. `npm run lint && npm run typecheck && npm test && npm run build`
+4. Commit e push su `master`: Vercel pubblica in automatico
+
+La versione in uso è visibile in basso a destra in tutte le pagine del pannello admin.
 
 ## Deploy
 
