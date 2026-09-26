@@ -54,7 +54,7 @@ export default function Form2Component() {
     if (storedForm2) {
       try { form.reset(JSON.parse(storedForm2)); } catch { /* corrotto */ }
     }
-  }, [router]);
+  }, [router, form]);
 
   /* ─── SUBMIT ─── */
   async function onSubmit(values: Step2FormValues) {

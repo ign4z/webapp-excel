@@ -55,7 +55,7 @@ export default function Form1() {
     } catch {
       // sessionStorage corrotto, ignora
     }
-  }, []);
+  }, [form]);
 
   // Carica lo script Google Maps una sola volta — riusa l'istanza se già presente (hot reload, navigazione)
   useEffect(() => {
@@ -172,7 +172,7 @@ export default function Form1() {
       active = false;
       input.removeEventListener('input', onInput);
     };
-  }, [selectedCity, scriptLoaded]);
+  }, [selectedCity, scriptLoaded, form]);
 
   async function onSubmit(values: Step1FormValues) {
     // Blocca il submit se l'indirizzo non è stato selezionato dal dropdown Google

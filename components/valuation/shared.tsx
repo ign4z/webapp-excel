@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import Image from 'next/image';
 
 /* ─── DESIGN TOKENS ─── */
 export const tokens = {
@@ -208,10 +209,12 @@ export function PageHeader({ subtitle }: { subtitle: string }) {
           opacity: 0.6;
         }
       `}</style>
-      <img
+      <Image
         className="header-logo"
         src="/logo.jpg"
         alt="Logo"
+        width={80}
+        height={80}
       />
       <p className="eyebrow">Valutazione Immobiliare</p>
       <h1>Scopri il valore<br />del <em>tuo immobile</em></h1>
