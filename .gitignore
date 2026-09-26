@@ -1,5 +1,8 @@
 # dependencies
 /node_modules
+
+# local log files
+/logs
 /.pnp
 .pnp.js
 
@@ -34,3 +37,6 @@ yarn-error.log*
 
 # config locale
 config-local.json
+
+# typescript
+*.tsbuildinfo

@@ -1,20 +1,22 @@
 'use client';
 
 import { ReactNode } from 'react';
+import Image from 'next/image';
 
 /* ─── DESIGN TOKENS ─── */
 export const tokens = {
-  gold: '#C9A84C',
-  goldLight: '#E8C97A',
-  goldDark: '#9A7535',
-  ink: '#0F1117',
-  inkSoft: '#1E2230',
-  paper: '#F9F6F0',
-  paperDark: '#EDE8DF',
-  muted: '#6B7280',
-  success: '#2D7A4F',
-  successLight: '#E8F5EE',
-  error: '#B91C1C',
+  gold: '#DA2128',
+  goldLight: '#F1373E',
+  goldDark: '#B01820',
+  ink: '#F4F3F1',
+  inkSoft: '#ABA9A5',
+  paper: '#0B0B0C',
+  paperDark: '#121214',
+  border: 'rgba(255,255,255,0.09)',
+  muted: '#6E6D6B',
+  success: '#22C55E',
+  successLight: '#14532D',
+  error: '#F87171',
 };
 
 /* ─── STEPPER ─── */
@@ -55,17 +57,18 @@ export function Stepper({ current }: StepperProps) {
         }
         .step-circle.active {
           background: ${tokens.gold};
-          color: ${tokens.ink};
-          box-shadow: 0 0 0 4px ${tokens.goldLight}33;
+          color: #FFFFFF;
+          box-shadow: 0 0 0 4px ${tokens.gold}33;
         }
         .step-circle.done {
-          background: ${tokens.ink};
+          background: ${tokens.paperDark};
           color: ${tokens.gold};
+          border: 1px solid ${tokens.gold};
         }
         .step-circle.upcoming {
           background: transparent;
           color: ${tokens.muted};
-          border: 1.5px solid #D1C9BB;
+          border: 1.5px solid #3A3A3A;
         }
         .step-label {
           font-size: 0.7rem;
@@ -76,16 +79,16 @@ export function Stepper({ current }: StepperProps) {
           color: ${tokens.muted};
         }
         .step-label.active {
-          color: ${tokens.goldDark};
+          color: ${tokens.goldLight};
           font-weight: 600;
         }
         .step-connector {
           width: 5rem;
           height: 1px;
-          background: linear-gradient(90deg, ${tokens.gold}, #D1C9BB);
+          background: linear-gradient(90deg, ${tokens.gold}, #3A3A3A);
           margin: 0 0.5rem;
           margin-bottom: 1.4rem;
-          opacity: 0.5;
+          opacity: 0.6;
         }
         .step-col {
           display: flex;
@@ -119,16 +122,16 @@ export function PageShell({ children }: PageShellProps) {
   return (
     <div className="page-shell">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Outfit:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
         .page-shell {
           min-height: 100vh;
           background-color: ${tokens.paper};
           background-image:
-            radial-gradient(ellipse 80% 60% at 50% -10%, ${tokens.goldLight}18 0%, transparent 70%),
-            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A84C' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            radial-gradient(ellipse 80% 60% at 50% -10%, ${tokens.gold}12 0%, transparent 70%),
+            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C41E3A' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
           padding: 3rem 1.5rem 5rem;
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Hanken Grotesk', system-ui, sans-serif;
         }
 
         .page-inner {
@@ -163,7 +166,7 @@ export function PageHeader({ subtitle }: { subtitle: string }) {
           margin-bottom: 2.5rem;
         }
         .page-header-vl .eyebrow {
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           font-size: 0.65rem;
           letter-spacing: 0.22em;
           text-transform: uppercase;
@@ -171,7 +174,7 @@ export function PageHeader({ subtitle }: { subtitle: string }) {
           margin-bottom: 0.6rem;
         }
         .page-header-vl h1 {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: 'Newsreader', Georgia, serif;
           font-size: clamp(2rem, 5vw, 2.8rem);
           font-weight: 300;
           color: ${tokens.ink};
@@ -181,12 +184,22 @@ export function PageHeader({ subtitle }: { subtitle: string }) {
         }
         .page-header-vl h1 em {
           font-style: italic;
-          color: ${tokens.goldDark};
+          color: ${tokens.gold};
         }
         .page-header-vl .subtitle {
           font-size: 0.9rem;
           color: ${tokens.muted};
           font-weight: 300;
+        }
+        .header-logo {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid ${tokens.gold};
+          box-shadow: 0 0 0 4px ${tokens.gold}22;
+          margin: 0 auto 1.2rem;
+          display: block;
         }
         .header-rule {
           width: 3rem;
@@ -196,6 +209,13 @@ export function PageHeader({ subtitle }: { subtitle: string }) {
           opacity: 0.6;
         }
       `}</style>
+      <Image
+        className="header-logo"
+        src="/logo.jpg"
+        alt="Logo"
+        width={80}
+        height={80}
+      />
       <p className="eyebrow">Valutazione Immobiliare</p>
       <h1>Scopri il valore<br />del <em>tuo immobile</em></h1>
       <p className="subtitle">{subtitle}</p>
@@ -215,7 +235,7 @@ export function FieldGroup({ children, label, error }: { children: ReactNode; la
           gap: 0.4rem;
         }
         .vl-label {
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           font-size: 0.65rem;
           letter-spacing: 0.15em;
           text-transform: uppercase;
@@ -229,11 +249,11 @@ export function FieldGroup({ children, label, error }: { children: ReactNode; la
         }
         .vl-input {
           width: 100%;
-          background: white;
-          border: 1px solid #DDD7CC;
+          background: ${tokens.paperDark};
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Hanken Grotesk', system-ui, sans-serif;
           font-size: 0.95rem;
           color: ${tokens.ink};
           outline: none;
@@ -242,14 +262,14 @@ export function FieldGroup({ children, label, error }: { children: ReactNode; la
         }
         .vl-input:focus {
           border-color: ${tokens.gold};
-          box-shadow: 0 0 0 3px ${tokens.goldLight}22;
+          box-shadow: 0 0 0 3px ${tokens.gold}22;
         }
         .vl-input:disabled {
-          background: ${tokens.paperDark};
+          background: #111111;
           color: ${tokens.muted};
           cursor: not-allowed;
         }
-        .vl-input::placeholder { color: #BDB8AF; }
+        .vl-input::placeholder { color: #444444; }
       `}</style>
       <label className="vl-label">{label}</label>
       {children}
@@ -281,11 +301,11 @@ export function PrimaryButton({
           justify-content: center;
           gap: 0.5rem;
           padding: 0.85rem 2rem;
-          background: ${tokens.ink};
-          color: ${tokens.gold};
+          background: ${tokens.gold};
+          color: #FFFFFF;
           border: none;
           border-radius: 6px;
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           font-size: 0.75rem;
           letter-spacing: 0.12em;
           text-transform: uppercase;
@@ -294,9 +314,9 @@ export function PrimaryButton({
           width: var(--btn-width, auto);
         }
         .vl-btn-primary:hover:not(:disabled) {
-          background: ${tokens.inkSoft};
+          background: ${tokens.goldDark};
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px ${tokens.ink}22;
+          box-shadow: 0 6px 20px ${tokens.gold}44;
         }
         .vl-btn-primary:active:not(:disabled) { transform: translateY(0); }
         .vl-btn-primary:disabled {
@@ -309,7 +329,7 @@ export function PrimaryButton({
         disabled={disabled}
         onClick={onClick}
         className="vl-btn-primary"
-        style={{ ['--btn-width' as any]: fullWidth ? '100%' : 'auto' }}
+        style={{ '--btn-width': fullWidth ? '100%' : 'auto' } as React.CSSProperties}
       >
         {children}
       </button>
@@ -337,9 +357,9 @@ export function GhostButton({
           padding: 0.85rem 1.5rem;
           background: transparent;
           color: ${tokens.muted};
-          border: 1px solid #DDD7CC;
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           font-size: 0.7rem;
           letter-spacing: 0.1em;
           text-transform: uppercase;
@@ -365,16 +385,19 @@ export function VLCard({ children, accent }: { children: ReactNode; accent?: boo
     <div className={`vl-card ${accent ? 'vl-card-accent' : ''}`}>
       <style>{`
         .vl-card {
-          background: white;
-          border: 1px solid #E8E2D9;
-          border-radius: 12px;
+          background: ${tokens.paperDark};
+          border: 1px solid ${tokens.border};
+          border-top: 1px solid rgba(255,255,255,0.08);
+          border-radius: 14px;
           padding: 2rem;
-          box-shadow: 0 2px 12px ${tokens.ink}08;
+          box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
           margin-bottom: 1.5rem;
         }
         .vl-card-accent {
           border-left: 3px solid ${tokens.gold};
-          background: linear-gradient(135deg, white 0%, ${tokens.paper} 100%);
+          border-top: 1px solid rgba(196,30,58,0.3);
+          background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+          box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(196,30,58,0.1), 0 2px 8px rgba(0,0,0,0.4);
         }
       `}</style>
       {children}
@@ -404,14 +427,14 @@ export function CheckboxRow({
           cursor: pointer;
           padding: 0.6rem 0.9rem;
           border-radius: 6px;
-          border: 1px solid #EDE8DF;
-          background: white;
+          border: 1px solid ${tokens.border};
+          background: ${tokens.paperDark};
           transition: border-color 0.2s, background 0.2s;
           user-select: none;
         }
         .vl-checkbox-row:hover {
           border-color: ${tokens.gold};
-          background: ${tokens.paper};
+          background: #2e2e2e;
         }
         .vl-checkbox-row input[type="checkbox"] {
           width: 1rem;
@@ -424,10 +447,10 @@ export function CheckboxRow({
           font-size: 0.9rem;
           color: ${tokens.ink};
           flex: 1;
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Hanken Grotesk', system-ui, sans-serif;
         }
         .vl-checkbox-badge {
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           font-size: 0.65rem;
           letter-spacing: 0.08em;
           color: ${tokens.success};

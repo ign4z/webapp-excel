@@ -1,6 +1,6 @@
 'use client';
 
-import { UseFormReturn, Controller } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
 import ReCAPTCHA from 'react-google-recaptcha';
 import {
   PageShell,
@@ -10,19 +10,36 @@ import {
   FieldGroup,
   PrimaryButton,
   GhostButton,
-  CheckboxRow,
   tokens,
 } from '@/components/valuation/shared';
+import type {
+  StatoCoefficientKey,
+  ClasseEnergeticaKey,
+  AnnoCostKey,
+  AscensoreKey,
+  TerrazzoKey,
+  GiardinoKey,
+  GarageKey,
+  CantinaKey,
+  RiscaldamentoKey,
+} from '@/lib/config';
+import {
+  TIPOLOGIA_LABELS,
+  PIANO_LABELS,
+  LOCALI_LABELS,
+  BAGNI_LABELS,
+} from '@/lib/labels';
 
 export interface Step2FormValues {
-  floor?: number;
-  hasElevator?: boolean;
-  hasSecondBathroom?: boolean;
-  hasCellar?: boolean;
-  exposure?: 'north' | 'south' | 'east' | 'west' | 'none';
-  heatingType?: 'autonomous' | 'centralized' | 'none';
-  buildYear?: number;
-  isRecentlyRenovated?: boolean;
+  stato: StatoCoefficientKey;
+  classeEnergetica: ClasseEnergeticaKey;
+  annoCostruzione: AnnoCostKey;
+  ascensore: AscensoreKey;
+  terrazzo: TerrazzoKey;
+  giardino: GiardinoKey;
+  garage: GarageKey;
+  cantina: CantinaKey;
+  riscaldamento: RiscaldamentoKey;
   notes?: string;
 }
 
@@ -32,6 +49,10 @@ interface Form1Data {
   email: string;
   address: string;
   squareMeters: number;
+  tipologia?: string;
+  piano?: string;
+  locali?: string;
+  bagni?: string;
 }
 
 interface CalcResult {
@@ -41,8 +62,8 @@ interface CalcResult {
 interface FinalResult {
   baseValue: number;
   finalValue: number;
-  totalAdjustment: number;
-  details?: string[];
+  totalAdjustment?: number;
+  details?: Array<string | { label: string; coefficiente: number }>;
 }
 
 interface Step2ViewProps {
@@ -51,12 +72,12 @@ interface Step2ViewProps {
   calculationResult: CalcResult;
   isLoading: boolean;
   finalResult: FinalResult | null;
-  excelUrl: string | null;
   onSubmit: (e: React.FormEvent) => void;
   onBack: () => void;
   onRecaptchaChange: (token: string | null) => void;
   onNewValuation: () => void;
 }
+
 
 export function Step2View({
   form,
@@ -64,16 +85,15 @@ export function Step2View({
   calculationResult,
   isLoading,
   finalResult,
-  excelUrl,
   onSubmit,
   onBack,
   onRecaptchaChange,
   onNewValuation,
 }: Step2ViewProps) {
-  const { register, formState: { errors }, control } = form;
+  const { register, formState: { errors } } = form;
 
-  if (finalResult && excelUrl) {
-    return <ResultScreen finalResult={finalResult} excelUrl={excelUrl} onNewValuation={onNewValuation} />;
+  if (finalResult) {
+    return <ResultScreen finalResult={finalResult} onNewValuation={onNewValuation} />;
   }
 
   return (
@@ -101,7 +121,7 @@ export function Step2View({
         }
         .summary-estimate {
           grid-column: 1 / -1;
-          border-top: 1px solid #EDE8DF;
+          border-top: 1px solid ${tokens.border};
           padding-top: 1rem;
           margin-top: 0.25rem;
           display: flex;
@@ -128,7 +148,6 @@ export function Step2View({
           .summary-grid { grid-template-columns: 1fr; }
         }
         .form-fields { display: flex; flex-direction: column; gap: 1rem; }
-        .checkboxes { display: flex; flex-direction: column; gap: 0.5rem; }
         .section-title {
           font-family: 'Cormorant Garamond', serif;
           font-size: 1rem;
@@ -137,7 +156,7 @@ export function Step2View({
           letter-spacing: 0.02em;
           margin-bottom: 1.2rem;
           padding-bottom: 0.5rem;
-          border-bottom: 1px solid #EDE8DF;
+          border-bottom: 1px solid ${tokens.border};
         }
         .optional-tag {
           font-family: 'DM Mono', monospace;
@@ -149,8 +168,8 @@ export function Step2View({
         }
         .vl-select {
           width: 100%;
-          background: white;
-          border: 1px solid #DDD7CC;
+          background: ${tokens.paperDark};
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
           font-family: 'Outfit', sans-serif;
@@ -159,14 +178,14 @@ export function Step2View({
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
           appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A84C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C41E3A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 0.9rem center;
           cursor: pointer;
         }
         .vl-select:focus {
           border-color: ${tokens.gold};
-          box-shadow: 0 0 0 3px ${tokens.goldLight}22;
+          box-shadow: 0 0 0 3px ${tokens.gold}22;
         }
         .btn-row {
           display: flex;
@@ -176,13 +195,6 @@ export function Step2View({
         .btn-row > :first-child { flex-shrink: 0; }
         .btn-row > :last-child { flex: 1; }
         .recaptcha-wrap { display: flex; justify-content: center; }
-        .field-hint {
-          font-size: 0.72rem;
-          color: ${tokens.muted};
-          font-family: 'DM Mono', monospace;
-          letter-spacing: 0.04em;
-          margin-top: 0.2rem;
-        }
       `}</style>
 
       <div className="page-inner-wide">
@@ -200,12 +212,34 @@ export function Step2View({
               <p className="summary-item-label">Superficie</p>
               <p className="summary-item-value">{form1Data.squareMeters} mq</p>
             </div>
-            <div className="summary-grid" style={{ gridColumn: '1/-1', padding: 0, margin: 0 }}>
-              <div style={{ gridColumn: '1/-1' }}>
-                <p className="summary-item-label">Indirizzo</p>
-                <p className="summary-item-value">{form1Data.address}</p>
-              </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <p className="summary-item-label">Indirizzo</p>
+              <p className="summary-item-value">{form1Data.address}</p>
             </div>
+            {form1Data.tipologia && (
+              <div>
+                <p className="summary-item-label">Tipologia</p>
+                <p className="summary-item-value">{TIPOLOGIA_LABELS[form1Data.tipologia] ?? '—'}</p>
+              </div>
+            )}
+            {form1Data.piano && (
+              <div>
+                <p className="summary-item-label">Piano</p>
+                <p className="summary-item-value">{PIANO_LABELS[form1Data.piano] ?? '—'}</p>
+              </div>
+            )}
+            {form1Data.locali && (
+              <div>
+                <p className="summary-item-label">Locali</p>
+                <p className="summary-item-value">{LOCALI_LABELS[form1Data.locali] ?? '—'}</p>
+              </div>
+            )}
+            {form1Data.bagni && (
+              <div>
+                <p className="summary-item-label">Bagni</p>
+                <p className="summary-item-value">{BAGNI_LABELS[form1Data.bagni] ?? '—'}</p>
+              </div>
+            )}
             <div className="summary-estimate">
               <span className="estimate-label">Stima base</span>
               <span className="estimate-value">
@@ -216,116 +250,104 @@ export function Step2View({
         </VLCard>
 
         <form onSubmit={onSubmit}>
-          {/* Caratteristiche strutturali */}
+          {/* Stato e anno */}
           <VLCard>
-            <p className="section-title">
-              Caratteristiche strutturali
-              <span className="optional-tag">opzionali</span>
-            </p>
+            <p className="section-title">Condizioni immobile</p>
             <div className="form-fields">
               <div className="two-col">
-                <FieldGroup label="Piano" error={errors.floor?.message}>
-                  <input
-                    className="vl-input"
-                    type="number"
-                    min={0}
-                    placeholder="Es. 2"
-                    {...register('floor', {
-                      setValueAs: (v) => (v === '' ? undefined : parseInt(v)),
-                    })}
-                  />
-                  <span className="field-hint">0 = piano terra</span>
-                </FieldGroup>
-                <FieldGroup label="Anno di costruzione" error={errors.buildYear?.message}>
-                  <input
-                    className="vl-input"
-                    type="number"
-                    min={1800}
-                    max={new Date().getFullYear()}
-                    placeholder="Es. 1990"
-                    {...register('buildYear', {
-                      setValueAs: (v) => (v === '' ? undefined : parseInt(v)),
-                    })}
-                  />
-                  <span className="field-hint">−0.3% per ogni anno</span>
-                </FieldGroup>
-              </div>
-
-              <div className="two-col">
-                <FieldGroup label="Esposizione">
-                  <select className="vl-select" {...register('exposure')}>
-                    <option value="none">Non specificato</option>
-                    <option value="south">Sud (+5%)</option>
-                    <option value="east">Est (+5%)</option>
-                    <option value="west">Ovest (+5%)</option>
-                    <option value="north">Nord (−3%)</option>
+                <FieldGroup label="Stato immobile" error={errors.stato?.message}>
+                  <select className="vl-select" {...register('stato')}>
+                    <option value="daRistrutturare">Da ristrutturare</option>
+                    <option value="daRiattare">Da riattare</option>
+                    <option value="abitabile">Abitabile</option>
+                    <option value="buono">Buono</option>
+                    <option value="ottimo">Ottimo</option>
+                    <option value="ristrutturato">Ristrutturato</option>
+                    <option value="nuovo">Nuovo</option>
                   </select>
                 </FieldGroup>
-                <FieldGroup label="Riscaldamento">
-                  <select className="vl-select" {...register('heatingType')}>
-                    <option value="none">Non specificato</option>
-                    <option value="autonomous">Autonomo</option>
-                    <option value="centralized">Centralizzato</option>
+                <FieldGroup label="Anno di costruzione" error={errors.annoCostruzione?.message}>
+                  <select className="vl-select" {...register('annoCostruzione')}>
+                    <option value="prima1945">Prima del 1945</option>
+                    <option value="dal1945al1960">1945–1960</option>
+                    <option value="dal1961al1980">1961–1980</option>
+                    <option value="dal1981al2000">1981–2000</option>
+                    <option value="dal2001al2010">2001–2010</option>
+                    <option value="dal2011al2020">2011–2020</option>
+                    <option value="dal2021inPoi">2021 o successivo</option>
                   </select>
                 </FieldGroup>
               </div>
+              <FieldGroup label="Classe energetica" error={errors.classeEnergetica?.message}>
+                <select className="vl-select" {...register('classeEnergetica')}>
+                  {(['G','F','E','D','C','B','A1','A2','A3','A4'] as const).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </FieldGroup>
             </div>
           </VLCard>
 
-          {/* Optional features */}
+          {/* Dotazioni */}
           <VLCard>
-            <p className="section-title">
-              Dotazioni
-              <span className="optional-tag">opzionali</span>
-            </p>
-            <div className="checkboxes">
-              <Controller
-                control={control}
-                name="hasElevator"
-                render={({ field }) => (
-                  <CheckboxRow
-                    label="Ascensore"
-                    checked={!!field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="hasSecondBathroom"
-                render={({ field }) => (
-                  <CheckboxRow
-                    label="Secondo bagno"
-                    badge="+3%"
-                    checked={!!field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="hasCellar"
-                render={({ field }) => (
-                  <CheckboxRow
-                    label="Cantina"
-                    badge="+3%"
-                    checked={!!field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="isRecentlyRenovated"
-                render={({ field }) => (
-                  <CheckboxRow
-                    label="Ristrutturato recentemente"
-                    badge="+10%"
-                    checked={!!field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                  />
-                )}
-              />
+            <p className="section-title">Dotazioni</p>
+            <div className="form-fields">
+              <div className="two-col">
+                <FieldGroup label="Ascensore" error={errors.ascensore?.message}>
+                  <select className="vl-select" {...register('ascensore')}>
+                    <option value="no">No</option>
+                    <option value="si">Sì</option>
+                  </select>
+                </FieldGroup>
+                <FieldGroup label="Cantina" error={errors.cantina?.message}>
+                  <select className="vl-select" {...register('cantina')}>
+                    <option value="no">No</option>
+                    <option value="si">Sì</option>
+                  </select>
+                </FieldGroup>
+              </div>
+              <div className="two-col">
+                <FieldGroup label="Terrazzo / Balcone" error={errors.terrazzo?.message}>
+                  <select className="vl-select" {...register('terrazzo')}>
+                    <option value="nessuno">Nessuno</option>
+                    <option value="balcone">Balcone</option>
+                    <option value="balconiMultipli">Balconi multipli</option>
+                    <option value="terrazzoAbitabile">Terrazzo abitabile</option>
+                    <option value="terrazzoPanoramico">Terrazzo panoramico</option>
+                  </select>
+                </FieldGroup>
+                <FieldGroup label="Giardino" error={errors.giardino?.message}>
+                  <select className="vl-select" {...register('giardino')}>
+                    <option value="nessuno">Nessuno</option>
+                    <option value="piccolo">Piccolo (&lt;50 mq)</option>
+                    <option value="medio">Medio (50–150 mq)</option>
+                    <option value="grande">Grande (&gt;150 mq)</option>
+                    <option value="importante">Giardino importante</option>
+                  </select>
+                </FieldGroup>
+              </div>
+              <div className="two-col">
+                <FieldGroup label="Garage / Box" error={errors.garage?.message}>
+                  <select className="vl-select" {...register('garage')}>
+                    <option value="nessuno">Nessuno</option>
+                    <option value="postoScoperto">Posto auto scoperto</option>
+                    <option value="postoCoperto">Posto auto coperto</option>
+                    <option value="boxSingolo">Box singolo</option>
+                    <option value="boxDoppio">Box doppio</option>
+                  </select>
+                </FieldGroup>
+                <FieldGroup label="Riscaldamento" error={errors.riscaldamento?.message}>
+                  <select className="vl-select" {...register('riscaldamento')}>
+                    <option value="assente">Assente</option>
+                    <option value="centralizzatoVecchio">Centralizzato (vecchio)</option>
+                    <option value="centralizzatoContabilizzato">Centralizzato contabilizzato</option>
+                    <option value="autonomo">Autonomo</option>
+                    <option value="autonomoCondensazione">Autonomo a condensazione</option>
+                    <option value="pompaDiCalore">Pompa di calore</option>
+                    <option value="impiantoRadiante">Impianto radiante/evoluto</option>
+                  </select>
+                </FieldGroup>
+              </div>
             </div>
           </VLCard>
 
@@ -339,6 +361,7 @@ export function Step2View({
               <input
                 className="vl-input"
                 placeholder="Eventuali dettagli rilevanti…"
+                maxLength={500}
                 {...register('notes')}
               />
             </FieldGroup>
@@ -371,14 +394,12 @@ export function Step2View({
 /* ─── RESULT SCREEN ─── */
 function ResultScreen({
   finalResult,
-  excelUrl,
   onNewValuation,
 }: {
   finalResult: FinalResult;
-  excelUrl: string;
   onNewValuation: () => void;
 }) {
-  const adj = finalResult.totalAdjustment;
+  const adj = finalResult.totalAdjustment ?? 0;
   const adjSign = adj >= 0 ? '+' : '';
 
   return (
@@ -398,12 +419,12 @@ function ResultScreen({
           width: 4rem;
           height: 4rem;
           border-radius: 50%;
-          background: ${tokens.ink};
+          background: ${tokens.gold};
           display: inline-flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 1.5rem;
-          color: ${tokens.gold};
+          color: #FFFFFF;
           font-size: 1.6rem;
         }
         .result-title {
@@ -421,7 +442,7 @@ function ResultScreen({
           margin-bottom: 2.5rem;
         }
         .value-card {
-          background: ${tokens.ink};
+          background: ${tokens.gold};
           border-radius: 12px;
           padding: 2rem;
           margin-bottom: 1.5rem;
@@ -461,13 +482,11 @@ function ResultScreen({
           justify-content: space-between;
           align-items: center;
           padding: 0.3rem 0;
-          border-bottom: 1px solid ${tokens.inkSoft};
+          border-bottom: 1px solid rgba(255,255,255,0.2);
           font-size: 0.82rem;
-          color: #A0A8BC;
+          color: rgba(255,255,255,0.75);
           font-family: 'Outfit', sans-serif;
         }
-        .value-detail-pos { color: #6EE7B7; }
-        .value-detail-neg { color: #FCA5A5; }
         .value-final-label {
           font-family: 'DM Mono', monospace;
           font-size: 0.62rem;
@@ -484,33 +503,11 @@ function ResultScreen({
           letter-spacing: -0.01em;
         }
         .value-adj {
-          font-size: 0.82rem;
+          font-size: 0.7rem;
           color: ${adj >= 0 ? '#6EE7B7' : '#FCA5A5'};
           margin-top: 0.25rem;
           font-family: 'DM Mono', monospace;
-          font-size: 0.7rem;
           letter-spacing: 0.05em;
-        }
-        .dl-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.6rem;
-          padding: 0.9rem 2rem;
-          background: ${tokens.gold};
-          color: ${tokens.ink};
-          border-radius: 6px;
-          font-family: 'DM Mono', monospace;
-          font-size: 0.72rem;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          text-decoration: none;
-          font-weight: 600;
-          transition: background 0.2s, transform 0.15s;
-          margin-bottom: 1rem;
-        }
-        .dl-btn:hover {
-          background: ${tokens.goldLight};
-          transform: translateY(-1px);
         }
         .new-val-btn {
           display: inline-flex;
@@ -519,7 +516,7 @@ function ResultScreen({
           padding: 0.7rem 1.5rem;
           background: transparent;
           color: ${tokens.muted};
-          border: 1px solid #DDD7CC;
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
           font-family: 'DM Mono', monospace;
           font-size: 0.68rem;
@@ -538,7 +535,7 @@ function ResultScreen({
           Valutazione<br /><em>completata</em>
         </h2>
         <p className="result-subtitle">
-          Ti abbiamo inviato il report completo via email.
+          Ecco il riepilogo completo della tua valutazione.
         </p>
 
         <div className="value-card">
@@ -549,7 +546,14 @@ function ResultScreen({
             <div className="value-details">
               {finalResult.details.map((d, i) => (
                 <div key={i} className="value-detail-row">
-                  <span>{d}</span>
+                  {typeof d === 'string' ? (
+                    <span>{d}</span>
+                  ) : (
+                    <>
+                      <span>{d.label}</span>
+                      <span>×{d.coefficiente.toFixed(2)}</span>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -565,9 +569,6 @@ function ResultScreen({
         </div>
 
         <div className="actions">
-          <a href={excelUrl} download className="dl-btn">
-            ↓ Scarica report Excel
-          </a>
           <button className="new-val-btn" onClick={onNewValuation}>
             ← Nuova valutazione
           </button>

@@ -1,0 +1,25 @@
+{
+  "streetPrices": {
+    "via roma": 2050,
+    "via milano": 2000,
+    "via kennedy": 1980,
+    "via mazzini": 1950,
+    "via garibaldi": 1950,
+    "piazza della chiesa": 2000,
+    "via delle industrie": 1750,
+    "via dei platani": 1900,
+    "via risorgimento": 1920,
+    "via xxv aprile": 1930,
+    "via don minzoni": 1880,
+    "via cavour": 1950,
+    "via trento": 1900,
+    "via trieste": 1890,
+    "via dante": 1920,
+    "via leopardi": 1900,
+    "via montegrappa": 1880,
+    "via dei fiori": 1870,
+    "via cascina": 1800,
+    "via dei campi": 1780
+  },
+  "defaultPrice": 1900
+}

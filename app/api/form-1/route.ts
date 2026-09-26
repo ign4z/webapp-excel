@@ -1,93 +1,69 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
-import crypto from 'crypto';
-import { getValuationConfig, getPricePerSqm } from '@/lib/config';
+import { getPriceForStreet } from '@/lib/streets';
 import { sendForm1Email } from '@/lib/email';
+import { isAllowedCity, ALLOWED_CITIES } from '@/lib/cities';
+import { form1Schema } from '@/lib/schema';
+import { verifyRecaptcha } from '@/lib/recaptcha';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { createSessionToken } from '@/lib/session-token';
+import { createLogger } from '@/lib/logger';
 
-/* ==========================
-   SCHEMA
-========================== */
-const formSchema = z.object({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(10),
-  city: z.string().min(1),
-  address: z.string().min(5),
-  squareMeters: z.number().min(10),
-  recaptchaToken: z.string(),
-});
+const log = createLogger('api/form-1');
 
-/* ==========================
-   CONFIG
-========================== */
-const ALLOWED_CITIES = [
-  'Milano',
-  'Monza',
-  'Sesto San Giovanni',
-  'Cinisello Balsamo',
-  'Locate di Triulzi',
-];
+// Stesso schema del form client (lib/schema.ts): un attaccante che bypassa il client riceve comunque un 400 coerente
+const requestSchema = form1Schema.extend({ recaptchaToken: z.string() });
 
-/* ==========================
-   ROUTE
-========================== */
 export async function POST(req: NextRequest) {
+  // 10 richieste ogni 10 minuti per IP (contano anche i tentativi falliti)
+  const rl = await rateLimit('form-1', clientIp(req), 10, 600);
+  if (!rl.allowed) {
+    log.warn('Form-1 rate limited');
+    return NextResponse.json(
+      { error: 'Troppe richieste. Riprova tra qualche minuto.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json();
-    const validated = formSchema.parse(body);
+    const { recaptchaToken, ...validated } = requestSchema.parse(body);
 
-    /* ─── reCAPTCHA ─── */
-    if (process.env.RECAPTCHA_SECRET_KEY) {
-      const recaptchaResponse = await fetch(
-        'https://www.google.com/recaptcha/api/siteverify',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${validated.recaptchaToken}`,
-        }
-      );
+    log.info('Form1 POST received', { city: validated.city, sqm: validated.squareMeters });
 
-      const recaptchaData = await recaptchaResponse.json();
-
-      if (!recaptchaData.success) {
-        return NextResponse.json(
-          { error: 'Verifica reCAPTCHA fallita' },
-          { status: 400 }
-        );
-      }
+    if (!(await verifyRecaptcha(recaptchaToken))) {
+      log.warn('Form1 reCAPTCHA failed');
+      return NextResponse.json({ error: 'Verifica reCAPTCHA fallita' }, { status: 400 });
     }
 
-    /* ─── City whitelist (fast check prima del geocoding) ─── */
-    const cityAllowed = ALLOWED_CITIES.some(
-      (c) => c.toLowerCase() === validated.city.toLowerCase()
-    );
-
-    if (!cityAllowed) {
+    if (!isAllowedCity(validated.city)) {
+      log.warn('Form1 city not in whitelist', { city: validated.city });
       return NextResponse.json(
-        {
-          error:
-            'Servizio disponibile solo nei comuni di Milano, Monza, Sesto San Giovanni, Cinisello Balsamo e Locate di Triulzi.',
-        },
+        { error: `Servizio disponibile solo nei comuni di ${ALLOWED_CITIES.join(', ')}.` },
         { status: 400 }
       );
     }
 
-    /* ─── Business logic ─── */
-    const config = await getValuationConfig();
-    const pricePerSqm = getPricePerSqm(config, validated.city);
-    const estimatedValue = validated.squareMeters * pricePerSqm;
+    const pricePerSqm = await getPriceForStreet(validated.address, validated.city);
+    const estimatedValue = Math.round(validated.squareMeters * pricePerSqm);
+
+    log.info('Form1 calculation', { pricePerSqm, estimatedValue });
 
     const result = {
       city: validated.city,
       pricePerSqm,
       estimatedValue,
+      tipologia: validated.tipologia,
+      piano: validated.piano,
+      locali: validated.locali,
+      bagni: validated.bagni,
       message: 'Valutazione preliminare calcolata',
     };
 
-    const sessionToken = crypto.randomBytes(32).toString('hex');
+    const sessionToken = createSessionToken(validated);
 
-    sendForm1Email({
+    // after() mantiene viva la funzione serverless fino all'invio (una promise non attesa può essere interrotta)
+    after(() => sendForm1Email({
       email: validated.email,
       firstName: validated.firstName,
       lastName: validated.lastName,
@@ -96,19 +72,19 @@ export async function POST(req: NextRequest) {
       squareMeters: validated.squareMeters,
       pricePerSqm,
       estimatedValue,
-    }).catch((err) => console.error('Email Form 1 failed:', err));
+    }));
 
-    return NextResponse.json({ result, sessionToken });
-  } catch (error: any) {
-    console.error('Error in /api/form-1:', error);
-
+    // form1Data normalizzato (trim ecc.) restituito al client: è quello su cui è calcolato l'hash del token
+    return NextResponse.json({ result, sessionToken, form1Data: validated });
+  } catch (error) {
     if (error instanceof z.ZodError) {
+      log.warn('Form1 validation error', error.issues);
       return NextResponse.json(
         { error: 'Dati non validi', details: error.issues },
         { status: 400 }
       );
     }
-
+    log.error('Form1 POST error', error instanceof Error ? error.message : error);
     return NextResponse.json({ error: 'Errore del server' }, { status: 500 });
   }
 }

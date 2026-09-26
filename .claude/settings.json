@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/lint-edited.mjs",
+            "timeout": 60,
+            "statusMessage": "ESLint sul file modificato..."
+          }
+        ]
+      }
+    ]
+  }
+}

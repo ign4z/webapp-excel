@@ -1,6 +1,6 @@
 'use client';
 
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, useWatch } from 'react-hook-form';
 import ReCAPTCHA from 'react-google-recaptcha';
 import {
   PageShell,
@@ -11,14 +11,11 @@ import {
   PrimaryButton,
   tokens,
 } from './shared';
+import { ALLOWED_CITIES } from '@/lib/cities';
+import type { TipologiaCoefficientKey, PianoKey, LocaliKey, BagniKey } from '@/lib/config';
 
-const ALLOWED_CITIES = [
-  'Milano',
-  'Monza',
-  'Sesto San Giovanni',
-  'Cinisello Balsamo',
-  'Locate di Triulzi',
-];
+/** Piano keys selectable in the form (excludes 'piano6Plus' which is a server-side aggregation key) */
+export type PianoFormKey = Exclude<PianoKey, 'piano6Plus'>;
 
 export interface Step1FormValues {
   firstName: string;
@@ -28,11 +25,16 @@ export interface Step1FormValues {
   city: string;
   address: string;
   squareMeters: number;
+  tipologia: TipologiaCoefficientKey;
+  piano: PianoFormKey;
+  locali: LocaliKey;
+  bagni: BagniKey;
 }
 
 interface Step1ViewProps {
   form: UseFormReturn<Step1FormValues>;
-  addressRef: React.RefObject<HTMLInputElement | null>;
+  /** Riceve l'elemento input indirizzo (per agganciare Google Places Autocomplete) */
+  onAddressRef: (el: HTMLInputElement | null) => void;
   isLoading: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onRecaptchaChange: (token: string | null) => void;
@@ -40,18 +42,19 @@ interface Step1ViewProps {
 
 export function Step1View({
   form,
-  addressRef,
+  onAddressRef,
   isLoading,
   onSubmit,
   onRecaptchaChange,
 }: Step1ViewProps) {
   const {
     register,
+    control,
     formState: { errors },
-    watch,
   } = form;
 
-  const selectedCity = watch('city');
+  // useWatch (non watch()): con il React Compiler watch() non fa ri-renderizzare il componente
+  const selectedCity = useWatch({ control, name: 'city' });
 
   return (
     <PageShell>
@@ -61,8 +64,8 @@ export function Step1View({
         @media (max-width: 480px) { .two-col { grid-template-columns: 1fr; } }
         .vl-select {
           width: 100%;
-          background: white;
-          border: 1px solid #DDD7CC;
+          background: ${tokens.paperDark};
+          border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
           font-family: 'Outfit', sans-serif;
@@ -71,14 +74,14 @@ export function Step1View({
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
           appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A84C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C41E3A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 0.9rem center;
           cursor: pointer;
         }
         .vl-select:focus {
           border-color: ${tokens.gold};
-          box-shadow: 0 0 0 3px ${tokens.goldLight}22;
+          box-shadow: 0 0 0 3px ${tokens.gold}22;
         }
         .section-title {
           font-family: 'Cormorant Garamond', serif;
@@ -88,7 +91,7 @@ export function Step1View({
           letter-spacing: 0.02em;
           margin-bottom: 1.2rem;
           padding-bottom: 0.5rem;
-          border-bottom: 1px solid #EDE8DF;
+          border-bottom: 1px solid ${tokens.border};
         }
         .form-fields { display: flex; flex-direction: column; gap: 1.1rem; }
         .recaptcha-wrap { display: flex; justify-content: center; margin: 0.5rem 0; }
@@ -165,12 +168,12 @@ export function Step1View({
                   {...register('address')}
                   ref={(e) => {
                     register('address').ref(e);
-                    (addressRef as React.MutableRefObject<HTMLInputElement | null>).current = e;
+                    onAddressRef(e);
                   }}
                 />
                 {selectedCity && (
                   <span className="address-hint">
-                    Seleziona l'indirizzo dal menu a tendina
+                    Seleziona l&apos;indirizzo dal menu a tendina
                   </span>
                 )}
               </FieldGroup>
@@ -183,6 +186,61 @@ export function Step1View({
                   {...register('squareMeters', { valueAsNumber: true })}
                 />
               </FieldGroup>
+
+              <FieldGroup label="Tipologia immobile" error={errors.tipologia?.message}>
+                <select className="vl-select" {...register('tipologia')}>
+                  <option value="appartamento">Appartamento</option>
+                  <option value="openspaceLoft">Open Space / Loft</option>
+                  <option value="mansarda">Mansarda</option>
+                  <option value="attico">Attico</option>
+                  <option value="villettaSchiera">Villetta a schiera</option>
+                  <option value="villa">Villa</option>
+                  <option value="rusticoCasale">Rustico / Casale</option>
+                  <option value="stabilePalazzo">Stabile / Palazzo</option>
+                </select>
+              </FieldGroup>
+
+              <FieldGroup label="Piano" error={errors.piano?.message}>
+                <select className="vl-select" {...register('piano')}>
+                  <option value="interrato">Interrato</option>
+                  <option value="seminterrato">Seminterrato</option>
+                  <option value="pianoTerra">Piano Terra</option>
+                  <option value="rialzato">Rialzato</option>
+                  <option value="piano1">1° Piano</option>
+                  <option value="piano2">2° Piano</option>
+                  <option value="piano3">3° Piano</option>
+                  <option value="piano4">4° Piano</option>
+                  <option value="piano5">5° Piano</option>
+                  <option value="piano6">6° Piano</option>
+                  <option value="piano7">7° Piano</option>
+                  <option value="piano8">8° Piano</option>
+                  <option value="piano9">9° Piano</option>
+                  <option value="piano10Plus">10° Piano o superiore</option>
+                </select>
+              </FieldGroup>
+
+              <div className="two-col">
+                <FieldGroup label="Numero locali" error={errors.locali?.message}>
+                  <select className="vl-select" {...register('locali')}>
+                    <option value="locale1">1 locale</option>
+                    <option value="locali2">2 locali</option>
+                    <option value="locali3">3 locali</option>
+                    <option value="locali4">4 locali</option>
+                    <option value="locali5">5 locali</option>
+                    <option value="locali6">6 locali</option>
+                    <option value="locali7Plus">7 o più locali</option>
+                  </select>
+                </FieldGroup>
+                <FieldGroup label="Numero bagni" error={errors.bagni?.message}>
+                  <select className="vl-select" {...register('bagni')}>
+                    <option value="bagno1">1 bagno</option>
+                    <option value="bagni2">2 bagni</option>
+                    <option value="bagni3">3 bagni</option>
+                    <option value="bagni4">4 bagni</option>
+                    <option value="bagni5Plus">5 o più bagni</option>
+                  </select>
+                </FieldGroup>
+              </div>
             </div>
           </VLCard>
 
