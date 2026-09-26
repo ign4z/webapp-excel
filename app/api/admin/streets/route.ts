@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import { readBlobJson, writeBlobJson } from '@/lib/blob-json-cache';
 import { ALLOWED_CITIES, cityToSlug } from '@/lib/cities';
-import { invalidateStreetCache, getSeedStreetPrices } from '@/lib/streets';
+import { invalidateStreetCache, getSeedStreetPrices, MAX_STREET_KEYS } from '@/lib/streets';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api/admin/streets');
@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
     }
 
     const entries = Object.entries(body);
-    if (entries.length > 1000) {
-      return NextResponse.json({ error: 'Troppi elementi: max 1000 chiavi' }, { status: 400 });
+    if (entries.length > MAX_STREET_KEYS) {
+      return NextResponse.json({ error: `Troppi elementi: max ${MAX_STREET_KEYS} chiavi` }, { status: 400 });
     }
 
     // Normalizza le chiavi (lowercase + trim) e valida i prezzi prima di scrivere sul blob

@@ -1,15 +1,28 @@
-// Funzioni pure sull'indirizzo, usabili sia dal client (Form1) sia nei test
+// Funzioni pure sui componenti indirizzo di Google (admin: autocomplete vie e geocoding lato server)
 
-type AddressComponent = { long_name: string; types: string[] };
+export type AddressComponent = { long_name: string; types: string[] };
+
+/** Esito della ricerca su Google del nome ufficiale di una via */
+export type GoogleStreetMatch =
+  | { status: 'found'; route: string; partial: boolean }
+  | { status: 'not_found' }
+  | { status: 'error' };
 
 /**
- * Costruisce l'indirizzo canonico "Via Roma, 15" dai componenti di Google Places.
- * Il formato è quello atteso da extractStreetName/extractCivicNumber (lib/streets),
- * quindi il prezzo per civico continua a funzionare. Restituisce null se manca la via (route).
+ * Nome della via (componente `route`) dai componenti di Google Places/Geocoder, o null se assente.
+ * Unico punto in cui si legge la via da Google: lo usano l'editor strade admin e lib/google-geocode.ts.
  */
-export function buildCanonicalAddress(components: AddressComponent[]): string | null {
-  const route = components.find((c) => c.types.includes('route'))?.long_name.trim();
-  if (!route) return null;
-  const streetNumber = components.find((c) => c.types.includes('street_number'))?.long_name.trim();
-  return streetNumber ? `${route}, ${streetNumber}` : route;
+export function getRouteName(components: AddressComponent[]): string | null {
+  return components.find((c) => c.types.includes('route'))?.long_name.trim() || null;
+}
+
+/**
+ * true se i componenti appartengono al comune indicato (confronto su locality o administrative_area_level_3,
+ * senza distinzione di maiuscole). Serve a scartare indirizzi di comuni vicini restituiti da Google.
+ */
+export function isInCity(components: AddressComponent[], city: string): boolean {
+  const locality = components.find(
+    (c) => c.types.includes('locality') || c.types.includes('administrative_area_level_3')
+  );
+  return !!locality && locality.long_name.toLowerCase() === city.toLowerCase();
 }

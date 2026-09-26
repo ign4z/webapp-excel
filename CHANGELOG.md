@@ -3,6 +3,24 @@
 Tutte le modifiche rilevanti del progetto sono documentate in questo file.
 Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni secondo [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.9.1] — 2026-09-26
+
+### Aggiunto
+- Editor strade: "+ Aggiungi via" con autocomplete Google Maps limitato al comune, così la via viene salvata con il nome ufficiale che Google restituisce anche all'utente in Step 1.
+- Editor strade: "🔎 Verifica con Google" confronta le vie in lista con i nomi Google e propone le rinomine (applicabili una per una o tutte insieme, civici inclusi, senza sovrascrivere vie esistenti).
+- Log `Street not in price list, using city default` quando la via dell'utente non è in lista.
+- Vie e civici ufficiali ANNCSU per Opera, Locate di Triulzi, Pieve Emanuele, Siziano e Carpiano (`lib/streets/anncsu/`, aggiornabili con `npm run anncsu:update`).
+- Editor strade: "📥 Importa tutte le vie" (vie ufficiali con nomi Google, anteprima prima di applicare) e "🏠 Espandi civici" (tutti i civici ufficiali con il prezzo della via).
+- Editor strade: filtro per nome via e civici raggruppati per via.
+- Script `scripts/official-streets.ts` per import o svuotamento delle liste vie da terminale.
+
+### Modificato
+- Step 1: il campo indirizzo non usa più Google. La via si sceglie dall'elenco del comune (suggerimenti mentre si scrive, solo vie di quel comune, nome sempre uguale alla lista prezzi) e il civico ha un campo separato e facoltativo, con i civici ufficiali come suggerimento. Sotto compare il riepilogo "via civico, comune". Nuova route pubblica `GET /api/streets` (solo nomi e civici).
+- Caricamento di Google Maps e lettura dei componenti indirizzo spostati in `lib/google-maps.ts` e `lib/address.ts` (usati solo dall'admin).
+- "Verifica con Google" ora gira lato server con `GOOGLE_MAPS_SERVER_KEY` (`lib/google-geocode.ts`).
+- Limite chiavi per comune (vie + civici) portato da 1000 a 10000.
+- Svuotate le liste vie di Pieve Emanuele, Fizzonasco, Tolcinasco, Siziano e Carpiano (i comuni usano il prezzo di default).
+
 ## [0.9.0] — 2026-09-26
 
 ### Aggiunto

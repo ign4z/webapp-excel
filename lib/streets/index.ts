@@ -38,6 +38,16 @@ export function getSeedStreetPrices(slug: string): Record<string, number> {
   return SEED_MAP[slug]?.streetPrices ?? {};
 }
 
+const GLOBAL_DEFAULT_PRICE = 2000;
+
+/** Massimo di chiavi (vie + civici) per comune: con i civici ANNCSU espansi un comune arriva a ~2500 */
+export const MAX_STREET_KEYS = 10000;
+
+/** Prezzo €/mq usato per le vie non in lista: default del comune (seed) o fallback globale. */
+export function getCityDefaultPrice(slug: string): number {
+  return SEED_MAP[slug]?.defaultPrice ?? GLOBAL_DEFAULT_PRICE;
+}
+
 // L'indirizzo da Google Maps ha il formato "Via Roma, 15, 20090 Opera MI, Italia"
 // Il nome della via è sempre il primo segmento prima della prima virgola
 export function extractStreetName(formattedAddress: string): string {
@@ -53,30 +63,36 @@ export function extractCivicNumber(formattedAddress: string): string | null {
   return match ? match[1] : null;
 }
 
+/** Lista prezzi attuale del comune (vie + civici): blob se esiste, altrimenti seed. */
+export async function loadStreetMap(slug: string): Promise<{ map: Record<string, number>; source: 'blob' | 'seed' }> {
+  try {
+    const blob = await readBlobJson<Record<string, number>>(blobPath(slug));
+    if (blob) return { map: blob, source: 'blob' };
+    log.warn('Streets blob not found, falling back to seed', { slug });
+  } catch (err) {
+    log.warn('Streets blob fetch error, falling back to seed', { slug, error: err instanceof Error ? err.message : err });
+  }
+  return { map: SEED_MAP[slug]?.streetPrices ?? {}, source: 'seed' };
+}
+
 // Priorità lookup: "via roma:15" > "via roma" > defaultPrice del seed > 2000 globale
 export async function getPriceForStreet(
   formattedAddress: string,
   city: string
 ): Promise<number> {
   const slug = cityToSlug(city);
-  const seed = SEED_MAP[slug];
-  const globalDefault = 2000;
-
   const streetName = extractStreetName(formattedAddress);
   const civicNumber = extractCivicNumber(formattedAddress);
 
   log.debug('Price lookup', { address: formattedAddress, city, slug });
 
-  let streetMap: Record<string, number> | null = null;
-  try {
-    streetMap = await readBlobJson<Record<string, number>>(blobPath(slug));
-    if (!streetMap) log.warn('Streets blob not found, falling back to seed', { slug });
-  } catch (err) {
-    log.warn('Streets blob fetch error, falling back to seed', { slug, error: err instanceof Error ? err.message : err });
+  const { map, source } = await loadStreetMap(slug);
+  const { price, matched } = lookupPrice(map, streetName, civicNumber, getCityDefaultPrice(slug));
+  if (matched === 'default') {
+    // Via assente dalla lista (o scritta a mano per una frazione senza elenco): va aggiunta dall'admin
+    log.warn('Street not in price list, using city default', { slug, street: streetName });
   }
-
-  const price = lookupPrice(streetMap ?? seed?.streetPrices ?? {}, streetName, civicNumber, seed, globalDefault);
-  log.debug('Price resolved', { slug, price, source: streetMap ? 'blob' : 'seed' });
+  log.debug('Price resolved', { slug, price, matched, source });
   return price;
 }
 
@@ -84,13 +100,12 @@ function lookupPrice(
   streetMap: Record<string, number>,
   streetName: string,
   civicNumber: string | null,
-  seed: SeedModule | undefined,
-  globalDefault: number
-): number {
+  defaultPrice: number
+): { price: number; matched: 'civic' | 'street' | 'default' } {
   if (civicNumber !== null) {
     const civicKey = `${streetName}:${civicNumber}`;
-    if (civicKey in streetMap) return streetMap[civicKey];
+    if (civicKey in streetMap) return { price: streetMap[civicKey], matched: 'civic' };
   }
-  if (streetName in streetMap) return streetMap[streetName];
-  return seed?.defaultPrice ?? globalDefault;
+  if (streetName in streetMap) return { price: streetMap[streetName], matched: 'street' };
+  return { price: defaultPrice, matched: 'default' };
 }

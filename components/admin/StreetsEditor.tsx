@@ -1,20 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ALLOWED_CITIES } from '@/lib/cities';
-import { StreetsEditorView } from './StreetsEditorView';
+import { useState, useEffect, useRef } from 'react';
+import { ALLOWED_CITIES, cityToSlug } from '@/lib/cities';
+import { StreetsEditorView, type VerifyResult, type VerifyProgress } from './StreetsEditorView';
 import { adminFetch } from '@/components/admin/adminFetch';
+import { applyStreetRenames, type StreetRow, type CivicRow, type StreetRename } from '@/lib/street-rename';
+import { buildOfficialImport, expandCivics, type OfficialImportResult, type OfficialStreetEntry } from '@/lib/street-import';
+import type { GoogleStreetMatch } from '@/lib/address';
 
-interface StreetRow {
-  key: string;
-  value: number;
-}
-
-interface CivicRow {
-  street: string;
-  civic: string;
-  price: number;
-}
+// Massimo di vie per richiesta a /api/admin/streets/google (limite della route)
+const VERIFY_CHUNK = 300;
 
 interface NewCivicForm {
   street: string;
@@ -27,7 +22,7 @@ interface StreetsEditorProps {
 }
 
 export default function StreetsEditor({ token }: StreetsEditorProps) {
-  const [city, setCity] = useState(ALLOWED_CITIES[0].toLowerCase().replace(/\s+/g, '-'));
+  const [city, setCity] = useState(cityToSlug(ALLOWED_CITIES[0]));
   const [streetRows, setStreetRows] = useState<StreetRow[]>([]);
   const [civicRows, setCivicRows] = useState<CivicRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,6 +31,21 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
   const [importMsg, setImportMsg] = useState('');
   const [showNewCivic, setShowNewCivic] = useState(false);
   const [newCivic, setNewCivic] = useState<NewCivicForm>({ street: '', civic: '', price: 0 });
+  const [showNewStreet, setShowNewStreet] = useState(false);
+  const [newStreet, setNewStreet] = useState({ street: '', price: 0 });
+  const [newStreetMsg, setNewStreetMsg] = useState('');
+  const [verifyProgress, setVerifyProgress] = useState<VerifyProgress | null>(null);
+  const [verifyResults, setVerifyResults] = useState<VerifyResult[] | null>(null);
+  const [verifyMsg, setVerifyMsg] = useState('');
+  const [officialBusy, setOfficialBusy] = useState<'import' | 'expand' | null>(null);
+  const [importPreview, setImportPreview] = useState<OfficialImportResult | null>(null);
+  const [officialMsg, setOfficialMsg] = useState('');
+  const [filter, setFilter] = useState('');
+  // Incrementato a ogni cambio comune: una verifica ancora in corso sul comune precedente si interrompe
+  const verifyRunRef = useRef(0);
+
+  // Nome del comune come lo scrive Google (serve per autocomplete e geocoding), dallo slug selezionato
+  const cityName = ALLOWED_CITIES.find((c) => cityToSlug(c) === city) ?? city;
 
   useEffect(() => {
     loadStreets();
@@ -167,6 +177,143 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
     setCivicRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
   }
 
+  function handleCityChange(slug: string) {
+    verifyRunRef.current++;
+    setVerifyProgress(null);
+    setVerifyResults(null);
+    setVerifyMsg('');
+    setShowNewStreet(false);
+    setImportPreview(null);
+    setOfficialMsg('');
+    setFilter('');
+    setCity(slug);
+  }
+
+  function handleAddStreet() {
+    const street = newStreet.street.trim().toLowerCase();
+    if (!street) { setNewStreetMsg('Seleziona una via dai suggerimenti di Google'); return; }
+    if (newStreet.price <= 0) { setNewStreetMsg('Inserisci un prezzo €/mq valido'); return; }
+    if (streetRows.some((r) => r.key.trim().toLowerCase() === street)) {
+      setNewStreetMsg(`"${street}" è già in lista`);
+      return;
+    }
+    setStreetRows((prev) => [...prev, { key: street, value: newStreet.price }]);
+    setShowNewStreet(false);
+  }
+
+  async function handleVerify() {
+    const run = ++verifyRunRef.current;
+    const names = [...new Set(
+      [...streetRows.map((r) => r.key), ...civicRows.map((r) => r.street)]
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+
+    setVerifyResults(null);
+    setVerifyMsg('');
+    if (names.length === 0) return;
+
+    // Il geocoding gira lato server (chiave Google dedicata), a blocchi per restare nei limiti della route
+    const results: VerifyResult[] = [];
+    try {
+      for (let i = 0; i < names.length; i += VERIFY_CHUNK) {
+        setVerifyProgress({ done: i, total: names.length });
+        const res = await adminFetch(token, '/api/admin/streets/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ city, streets: names.slice(i, i + VERIFY_CHUNK) }),
+        });
+        const data = await res.json();
+        if (verifyRunRef.current !== run) return; // comune cambiato nel frattempo
+        if (!res.ok) throw new Error(data.error ?? 'Errore verifica Google');
+        for (const r of data.results as Array<{ street: string } & GoogleStreetMatch>) {
+          if (r.status === 'found') {
+            const suggestion = r.route.toLowerCase();
+            results.push(suggestion === r.street
+              ? { street: r.street, status: 'ok' }
+              : { street: r.street, status: 'rename', suggestion, partial: r.partial });
+          } else {
+            results.push({ street: r.street, status: r.status });
+          }
+        }
+      }
+      setVerifyResults(results);
+    } catch (err) {
+      if (verifyRunRef.current === run) setVerifyMsg(`❌ ${err instanceof Error ? err.message : 'Errore verifica Google'}`);
+    } finally {
+      if (verifyRunRef.current === run) setVerifyProgress(null);
+    }
+  }
+
+  /** Vie ufficiali ANNCSU del comune con nomi Google e civici (lato server, qualche secondo) */
+  async function fetchOfficial(): Promise<{ defaultPrice: number; streets: OfficialStreetEntry[]; date: string }> {
+    const res = await adminFetch(token, `/api/admin/streets/official?city=${city}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? 'Errore caricamento vie ufficiali');
+    return data;
+  }
+
+  async function handleOfficialImport() {
+    const run = verifyRunRef.current;
+    setOfficialBusy('import');
+    setOfficialMsg('');
+    setImportPreview(null);
+    try {
+      const official = await fetchOfficial();
+      if (verifyRunRef.current !== run) return;
+      setImportPreview(buildOfficialImport(streetRows, civicRows, official.streets, official.defaultPrice));
+      setOfficialMsg(`Dati ANNCSU del ${official.date}, prezzo per le vie nuove: ${official.defaultPrice} €/mq`);
+    } catch (err) {
+      if (verifyRunRef.current === run) setOfficialMsg(`❌ ${err instanceof Error ? err.message : 'Errore'}`);
+    } finally {
+      if (verifyRunRef.current === run) setOfficialBusy(null);
+    }
+  }
+
+  function handleApplyImport() {
+    if (!importPreview) return;
+    setStreetRows(importPreview.streetRows);
+    setCivicRows(importPreview.civicRows);
+    setOfficialMsg(`✅ Lista sostituita con ${importPreview.streetRows.length} vie ufficiali: ricordati di salvare`);
+    setImportPreview(null);
+  }
+
+  async function handleExpandCivics() {
+    const run = verifyRunRef.current;
+    setOfficialBusy('expand');
+    setOfficialMsg('');
+    try {
+      const official = await fetchOfficial();
+      if (verifyRunRef.current !== run) return;
+      const out = expandCivics(streetRows, civicRows, official.streets);
+      setCivicRows(out.civicRows);
+      const unmatched = out.unmatchedStreets.length > 0
+        ? `; ${out.unmatchedStreets.length} vie senza dati ANNCSU (${out.unmatchedStreets.slice(0, 5).join(', ')}${out.unmatchedStreets.length > 5 ? '…' : ''})`
+        : '';
+      setOfficialMsg(out.added > 0
+        ? `✅ Aggiunti ${out.added} civici su ${out.expandedStreets} vie${unmatched}: ricordati di salvare`
+        : `Nessun civico da aggiungere${unmatched}`);
+    } catch (err) {
+      if (verifyRunRef.current === run) setOfficialMsg(`❌ ${err instanceof Error ? err.message : 'Errore'}`);
+    } finally {
+      if (verifyRunRef.current === run) setOfficialBusy(null);
+    }
+  }
+
+  function handleApplyRenames(renames: StreetRename[]) {
+    const out = applyStreetRenames(streetRows, civicRows, renames);
+    setStreetRows(out.streetRows);
+    setCivicRows(out.civicRows);
+    const done = new Set(out.applied.map((r) => r.from));
+    const blocked = new Set(out.conflicts.map((r) => r.from));
+    setVerifyResults((prev) => prev
+      ?.filter((r) => !done.has(r.street))
+      .map((r) => (blocked.has(r.street) ? { ...r, conflict: true } : r)) ?? null);
+    setVerifyMsg(out.conflicts.length > 0
+      ? `⚠️ ${out.conflicts.length} rinomine non applicate: il nome Google è già in lista, unisci le righe a mano`
+      : `✅ ${out.applied.length} vie rinominate: ricordati di salvare`);
+  }
+
   const streetNames = streetRows.map(r => r.key).filter(k => k.trim());
 
   return (
@@ -182,10 +329,36 @@ export default function StreetsEditor({ token }: StreetsEditorProps) {
       showNewCivic={showNewCivic}
       newCivic={newCivic}
       streetNames={streetNames}
-      onCityChange={setCity}
+      cityName={cityName}
+      showNewStreet={showNewStreet}
+      newStreet={newStreet}
+      newStreetMsg={newStreetMsg}
+      verifyProgress={verifyProgress}
+      verifyResults={verifyResults}
+      verifyMsg={verifyMsg}
+      onCityChange={handleCityChange}
       onRowChange={handleRowChange}
       onDeleteRow={(i) => setStreetRows(prev => prev.filter((_, idx) => idx !== i))}
       onAddRow={() => setStreetRows(prev => [...prev, { key: '', value: 0 }])}
+      onShowNewStreet={(show) => {
+        setShowNewStreet(show);
+        setNewStreet({ street: '', price: 0 });
+        setNewStreetMsg('');
+      }}
+      onNewStreetChange={(value) => { setNewStreet(value); setNewStreetMsg(''); }}
+      onAddStreet={handleAddStreet}
+      onVerify={handleVerify}
+      onApplyRenames={handleApplyRenames}
+      onCloseVerify={() => { setVerifyResults(null); setVerifyMsg(''); }}
+      officialBusy={officialBusy}
+      importPreview={importPreview}
+      officialMsg={officialMsg}
+      filter={filter}
+      onOfficialImport={handleOfficialImport}
+      onApplyImport={handleApplyImport}
+      onCancelImport={() => { setImportPreview(null); setOfficialMsg(''); }}
+      onExpandCivics={handleExpandCivics}
+      onFilterChange={setFilter}
       onAddCivic={handleAddCivic}
       onCivicRowChange={handleCivicRowChange}
       onDeleteCivic={(i) => setCivicRows(prev => prev.filter((_, idx) => idx !== i))}

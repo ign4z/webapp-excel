@@ -40,3 +40,6 @@ config-local.json
 
 # typescript
 *.tsbuildinfo
+
+# Backup liste vie creati da scripts/official-streets.ts
+/backups

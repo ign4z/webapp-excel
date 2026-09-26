@@ -3,13 +3,13 @@ import { requireAdmin } from '@/lib/auth';
 import { writeBlobJson } from '@/lib/blob-json-cache';
 import ExcelJS from 'exceljs';
 import { ALLOWED_CITIES, cityToSlug } from '@/lib/cities';
-import { invalidateStreetCache } from '@/lib/streets';
+import { invalidateStreetCache, MAX_STREET_KEYS } from '@/lib/streets';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api/admin/streets/import');
 
 const SUPPORTED_CITIES = ALLOWED_CITIES.map(cityToSlug);
-const MAX_ROWS = 1000;
+const MAX_ROWS = MAX_STREET_KEYS;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(request: NextRequest) {

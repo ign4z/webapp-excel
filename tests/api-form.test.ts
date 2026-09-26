@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import type { Form1Values, Form2Values } from '@/lib/schema';
 
-// Servizi esterni simulati: store Blob vuoto (prezzi dai seed, config di default), niente email né reCAPTCHA reali
+// Servizi esterni simulati: nel Blob solo la lista vie di Opera (config di default), niente email né reCAPTCHA reali
 vi.mock('@/lib/blob-json-cache', () => ({
-  readBlobJson: vi.fn(async () => null),
+  readBlobJson: vi.fn(async (path: string) => (path === 'streets/opera.json' ? { 'via roma': 2050 } : null)),
   writeBlobJson: vi.fn(),
   invalidateBlobJson: vi.fn(),
 }));
@@ -26,7 +26,7 @@ const { verifyRecaptcha } = await import('@/lib/recaptcha');
 const { saveReport } = await import('@/lib/reports-storage');
 const { after } = await import('next/server');
 
-// Opera, "via roma" nel seed vale 2050 €/mq
+// Opera, "via roma" nel blob simulato vale 2050 €/mq
 const form1: Form1Values = {
   firstName: 'Mario', lastName: 'Rossi', email: 'mario@example.com', phone: '3331234567',
   city: 'Opera', address: 'Via Roma, 15, 20090 Opera MI, Italia', squareMeters: 100,

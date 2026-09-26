@@ -1,6 +1,6 @@
 # Webapp Valutazione Immobiliare
 
-**Versione 0.9.0** — vedi [CHANGELOG.md](CHANGELOG.md) per le novità di ogni release.
+**Versione 0.9.1** — vedi [CHANGELOG.md](CHANGELOG.md) per le novità di ogni release.
 
 Applicazione web per la stima del valore di immobili residenziali nella zona sud di Milano. Permette all'utente di ottenere una valutazione in due step e all'admin di gestire prezzi e configurazioni tramite un pannello dedicato.
 
@@ -13,7 +13,7 @@ Applicazione web per la stima del valore di immobili residenziali nella zona sud
 - **Vercel Blob** — persistenza configurazioni valutazione e prezzi strade per comune
 - **Resend** — invio email transazionali (stima preliminare, conferma ordine, notifica admin)
 - **ExcelJS** — generazione e parsing file `.xlsx` (report valutazione + import/export strade)
-- **Google Maps** — autocomplete indirizzi nel form Step 1
+- **Google Maps** — solo nel pannello admin: autocomplete vie e geocoding per allineare i nomi via a Google
 
 ## Setup
 
@@ -37,7 +37,8 @@ Applicazione web per la stima del valore di immobili residenziali nella zona sud
 
 | Variabile | Descrizione |
 |---|---|
-| `NEXT_PUBLIC_GOOGLE_API_KEY` | API key Google Maps per autocomplete indirizzi |
+| `NEXT_PUBLIC_GOOGLE_API_KEY` | API key Google Maps (Places) per l'autocomplete "+ Aggiungi via" dell'editor strade admin |
+| `GOOGLE_MAPS_SERVER_KEY` | Chiave Google lato server (solo Geocoding API, senza limite per referrer) per "Verifica con Google" e import vie ufficiali nell'admin |
 | `SESSION_SECRET` | Segreto HMAC per il token di sessione Step 1 → Step 2 (fallback: `ADMIN_TOKEN`) |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Rate limit condiviso tra istanze per i form pubblici. Se assenti, limite in memoria per istanza |
 | `LOG_LEVEL` | `error` \| `warn` \| `info` \| `debug` \| `trace` (default `info` in produzione) |
@@ -100,7 +101,7 @@ app/api/          API Routes — endpoint Next.js con validazione e autenticazio
 ### Step 1 — Stima preliminare
 
 1. L'utente seleziona il comune dalla lista dei comuni supportati
-2. Inserisce l'indirizzo tramite autocomplete Google Maps
+2. Sceglie la **via** tra quelle del comune (elenco da `GET /api/streets`, stessi nomi della lista prezzi) e, se vuole, il **civico** in un campo separato. Per le frazioni senza elenco la via si scrive a mano
 3. Inserisce la superficie in mq
 4. Seleziona: **tipologia** (appartamento, attico, villa, ecc.), **piano**, **numero locali**, **numero bagni**
 5. Il sistema calcola il prezzo/mq cercando: chiave civico (`via roma:15`) → chiave via (`via roma`) → default comune → fallback globale
@@ -178,12 +179,31 @@ L'editor strade (`/admin/streets`) permette di:
 - Selezionare il comune e visualizzare/modificare i prezzi per via
 - Aggiungere prezzi per civico specifico (es. `via roma:15`)
 - Scaricare un template Excel con i prezzi attuali per modifiche offline
-- Importare un file Excel aggiornato (max 1000 righe, max 5 MB)
+- Importare un file Excel aggiornato (max 10000 righe per foglio, max 5 MB)
+
+**Nomi via allineati a Google Maps.** Nello Step 1 l'utente sceglie la via dall'elenco del comune, quindi il nome coincide sempre con una chiave della lista prezzi. Le vie sono tenute con il nome ufficiale di Google, così restano coerenti con le mappe:
+- **+ Aggiungi via** apre un autocomplete Google limitato al comune e salva il nome ufficiale. "+ a mano" resta disponibile per le vie che Google non conosce.
+- **🔎 Verifica con Google** controlla tutte le vie del comune e propone le rinomine. Applicarle rinomina anche i relativi civici. Le modifiche vanno poi salvate con "Salva prezzi strade".
+- **📥 Importa tutte le vie** sostituisce la lista con tutte le vie ufficiali del comune, con i nomi di Google. Le vie già presenti tengono il loro prezzo, le nuove prendono il default del comune, quelle inesistenti vengono rimosse. Prima di applicare mostra un'anteprima.
+- **🏠 Espandi civici** aggiunge a ogni via tutti i civici ufficiali mancanti, ognuno con il prezzo €/mq della via, da ritoccare poi dove serve. Usa il filtro per lavorare su una via alla volta.
+- Il geocoding gira lato server e richiede `GOOGLE_MAPS_SERVER_KEY`, con un costo di circa 5 $ ogni 1000 vie verificate.
+- Le vie cercate dagli utenti che non sono in lista compaiono nei log Vercel come `Street not in price list, using city default` (con comune e nome della via), per esempio vie scritte a mano nelle frazioni senza elenco.
+
+**Vie e civici ufficiali (ANNCSU).** Vie e civici dei comuni vengono dall'[Archivio Nazionale dei Numeri Civici e delle Strade Urbane](https://www.anncsu.gov.it/it/consultazione-dellarchivio/open-data/) (Agenzia delle Entrate / Istat, open data). Sono salvati in `lib/streets/anncsu/<slug>.json`, uno per comune.
+- **Aggiornamento mensile:** `npm run anncsu:update` riscarica stradario e indirizzario della Lombardia, circa 40 MB.
+- **Codici catastali:** stanno in `CITY_CADASTRAL_CODES` (`lib/cities.ts`). Le frazioni Fizzonasco e Tolcinasco non hanno un codice proprio, quindi per loro l'import non è disponibile.
+- **Operazioni in blocco da terminale**, con la stessa logica dell'editor:
+  ```bash
+  npx tsx --env-file=.env.local scripts/official-streets.ts import opera           # anteprima
+  npx tsx --env-file=.env.local scripts/official-streets.ts import opera --write   # scrive blob + seed (backup in ./backups)
+  npx tsx --env-file=.env.local scripts/official-streets.ts clear siziano --write  # svuota le vie del comune
+  ```
 
 ## API Reference
 
 | Metodo | Path | Auth | Descrizione |
 |---|---|---|---|
+| `GET` | `/api/streets` | Nessuna | Vie selezionabili nello Step 1 per un comune (`?city=Opera`): solo nomi e civici, mai prezzi |
 | `POST` | `/api/form-1` | Nessuna | Salva dati Step 1 (inclusi tipologia/piano/locali/bagni), calcola stima base, invia email preliminare |
 | `POST` | `/api/form-2` | `sessionToken` di Step 1 | Verifica il token, ricalcola il prezzo, applica la formula a coefficienti, genera Excel e invia le email |
 | `GET` | `/api/admin/config` | Bearer | Legge configurazione corrente da Vercel Blob |
@@ -192,7 +212,7 @@ L'editor strade (`/admin/streets`) permette di:
 | `DELETE` | `/api/admin/files` | Bearer | Elimina un report `.xlsx` (`?url=...`) |
 | `GET` | `/api/admin/files/download` | Bearer | Scarica un report passando dal server (`?url=...`) |
 | `GET` | `/api/admin/streets` | Bearer | Legge prezzi strade per una city (`?city=opera`) |
-| `POST` | `/api/admin/streets` | Bearer | Aggiorna prezzi strade per una city (max 1000 chiavi) |
+| `POST` | `/api/admin/streets` | Bearer | Aggiorna prezzi strade per una city (max 10000 chiavi) |
 | `GET` | `/api/admin/streets/template` | Bearer | Scarica template Excel prezzi strade (`?city=opera`) |
 | `POST` | `/api/admin/streets/import` | Bearer | Importa prezzi strade da file `.xlsx` (multipart, campo `file`) |
 
@@ -213,6 +233,12 @@ L'editor strade (`/admin/streets`) permette di:
 | Carpiano | `carpiano` | 1.600 |
 
 I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in `lib/cities.ts` — aggiungere un comune richiede solo una modifica lì + un seed file in `lib/streets/`.
+
+## TODO
+
+1. **Grafica interna**: migliorare l'aspetto del pannello admin, oggi poco curato.
+2. **Passaggio da Step 1 a Step 2**: dopo l'invio la pagina sembra ferma, forse perché aspetta l'invio della mail. Serve un feedback visibile (caricamento) e una navigazione più rapida.
+3. **Store separati dev/produzione**: oggi lo store Vercel Blob è unico, quindi le modifiche fatte in locale finiscono in produzione. Serve uno store dedicato allo sviluppo (token diverso in `.env.local`).
 
 ## Versioni e rilascio
 

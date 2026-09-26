@@ -12,6 +12,8 @@ import {
   tokens,
 } from './shared';
 import { ALLOWED_CITIES } from '@/lib/cities';
+import type { StreetOption } from '@/lib/street-search';
+import { StreetCombobox } from './StreetCombobox';
 import type { TipologiaCoefficientKey, PianoKey, LocaliKey, BagniKey } from '@/lib/config';
 
 /** Piano keys selectable in the form (excludes 'piano6Plus' which is a server-side aggregation key) */
@@ -31,10 +33,23 @@ export interface Step1FormValues {
   bagni: BagniKey;
 }
 
+/** Stato del campo indirizzo (via + civico), gestito dal controller Form1 */
+export interface AddressFieldProps {
+  /** Vie del comune selezionato; vuota per le frazioni senza elenco (via scritta a mano) */
+  streets: StreetOption[];
+  status: 'idle' | 'loading' | 'ready' | 'error';
+  streetText: string;
+  selectedStreet: StreetOption | null;
+  civic: string;
+  civicError?: string;
+  onStreetTextChange: (text: string) => void;
+  onSelectStreet: (street: StreetOption) => void;
+  onCivicChange: (civic: string) => void;
+}
+
 interface Step1ViewProps {
   form: UseFormReturn<Step1FormValues>;
-  /** Riceve l'elemento input indirizzo (per agganciare Google Places Autocomplete) */
-  onAddressRef: (el: HTMLInputElement | null) => void;
+  address: AddressFieldProps;
   isLoading: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onRecaptchaChange: (token: string | null) => void;
@@ -42,7 +57,7 @@ interface Step1ViewProps {
 
 export function Step1View({
   form,
-  onAddressRef,
+  address,
   isLoading,
   onSubmit,
   onRecaptchaChange,
@@ -102,6 +117,14 @@ export function Step1View({
           font-family: 'DM Mono', monospace;
           letter-spacing: 0.05em;
         }
+        .street-row { display: grid; grid-template-columns: 1fr 7rem; gap: 0.75rem; align-items: start; }
+        .address-summary {
+          display: flex; gap: 0.5rem; align-items: baseline;
+          padding: 0.65rem 0.85rem; border-radius: 6px;
+          background: ${tokens.success}14; border: 1px solid ${tokens.success}40;
+          font-size: 0.9rem; color: ${tokens.ink};
+        }
+        .address-summary-city { color: ${tokens.inkSoft}; }
       `}</style>
 
       <div className="page-inner">
@@ -159,24 +182,65 @@ export function Step1View({
                 </select>
               </FieldGroup>
 
-              <FieldGroup label="Indirizzo" error={errors.address?.message}>
-                <input
-                  className="vl-input"
-                  placeholder={selectedCity ? 'Inizia a digitare…' : 'Seleziona prima il comune'}
-                  disabled={!selectedCity}
-                  autoComplete="off"
-                  {...register('address')}
-                  ref={(e) => {
-                    register('address').ref(e);
-                    onAddressRef(e);
-                  }}
-                />
-                {selectedCity && (
-                  <span className="address-hint">
-                    Seleziona l&apos;indirizzo dal menu a tendina
+              <div className="street-row">
+                <FieldGroup label="Via" error={errors.address?.message}>
+                  {address.streets.length > 0 ? (
+                    <StreetCombobox
+                      streets={address.streets}
+                      value={address.streetText}
+                      city={selectedCity}
+                      invalid={!!errors.address}
+                      placeholder="Inizia a scrivere il nome della via…"
+                      onTextChange={address.onStreetTextChange}
+                      onSelect={address.onSelectStreet}
+                    />
+                  ) : (
+                    <input
+                      className="vl-input"
+                      autoComplete="off"
+                      disabled={!selectedCity || address.status === 'loading'}
+                      placeholder={
+                        !selectedCity ? 'Seleziona prima il comune'
+                          : address.status === 'loading' ? 'Carico le vie…'
+                            : 'Es. Via Roma'
+                      }
+                      value={address.streetText}
+                      onChange={(e) => address.onStreetTextChange(e.target.value)}
+                    />
+                  )}
+                </FieldGroup>
+                <FieldGroup label="Civico" error={address.civicError}>
+                  <input
+                    className="vl-input"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="Es. 15"
+                    maxLength={10}
+                    disabled={!selectedCity}
+                    list={address.selectedStreet?.civici.length ? 'civici-suggeriti' : undefined}
+                    value={address.civic}
+                    onChange={(e) => address.onCivicChange(e.target.value)}
+                  />
+                  {address.selectedStreet && address.selectedStreet.civici.length > 0 && (
+                    <datalist id="civici-suggeriti">
+                      {address.selectedStreet.civici.map((c) => <option key={c} value={c} />)}
+                    </datalist>
+                  )}
+                </FieldGroup>
+              </div>
+              {address.selectedStreet ? (
+                <div className="address-summary" aria-live="polite">
+                  <span>📍</span>
+                  <span>
+                    {address.selectedStreet.label}{address.civic.trim() && ` ${address.civic.trim()}`}
+                    <span className="address-summary-city">, {selectedCity}</span>
                   </span>
-                )}
-              </FieldGroup>
+                </div>
+              ) : selectedCity && address.status === 'error' ? (
+                <span className="address-hint">Elenco vie non disponibile: scrivi la via a mano</span>
+              ) : selectedCity && address.streets.length > 0 ? (
+                <span className="address-hint">Scegli la via dall&apos;elenco · il civico è facoltativo</span>
+              ) : null}
 
               <FieldGroup label="Superficie (mq)" error={errors.squareMeters?.message}>
                 <input

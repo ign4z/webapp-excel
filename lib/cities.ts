@@ -17,3 +17,15 @@ export function isAllowedCity(city: string): boolean {
 export function cityToSlug(city: string): string {
   return city.toLowerCase().replace(/\s+/g, '-');
 }
+
+/**
+ * Codice catastale (Belfiore) dei comuni, usato per estrarre vie e civici da ANNCSU (scripts/anncsu-extract.mjs).
+ * Le frazioni (Fizzonasco, Tolcinasco) non hanno un codice proprio: in ANNCSU sono vie di Pieve Emanuele senza località.
+ */
+export const CITY_CADASTRAL_CODES: Record<string, string> = {
+  'locate-di-triulzi': 'E639',
+  'opera': 'G078',
+  'pieve-emanuele': 'G634',
+  'siziano': 'I739',
+  'carpiano': 'B820',
+};
