@@ -78,7 +78,7 @@ export default function StreetAutocomplete({ city, onSelect }: StreetAutocomplet
         type="text"
         placeholder={`Cerca una via di ${city}…`}
         onChange={() => { setError(''); onSelectRef.current(''); }}
-        className="w-full px-2 py-1.5 bg-zinc-700 border border-zinc-600 text-zinc-200 rounded focus:ring-1 focus:ring-blue-600 focus:outline-none text-sm"
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-base text-foreground shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm"
       />
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>

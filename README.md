@@ -267,7 +267,7 @@ I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in 
 
 ## TODO
 
-1. **Grafica interna**: migliorare l'aspetto del pannello admin, oggi poco curato.
+Nessun TODO aperto.
 
 ## Versioni e rilascio
 

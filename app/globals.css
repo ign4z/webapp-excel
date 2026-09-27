@@ -61,8 +61,9 @@
   --secondary-foreground: oklch(0.85 0 0);
   --muted: oklch(0.18 0 0);
   --muted-foreground: oklch(0.55 0 0);
-  --accent: oklch(0.45 0.22 15);
-  --accent-foreground: oklch(0.98 0 0);
+  /* accent neutro: è l'hover di pulsanti outline/ghost (admin); il rosso resta su --primary */
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.95 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.22 0 0);
   --input: oklch(0.22 0 0);

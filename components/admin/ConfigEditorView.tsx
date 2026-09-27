@@ -1,6 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown, Loader2, RotateCcw, Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { StatusMessage } from './StatusMessage';
 import { ALLOWED_CITIES } from '@/lib/cities';
 import type { ValuationConfig, ValuationCoefficientTables } from '@/lib/config';
 import {
@@ -59,19 +65,20 @@ const COEFF_SECTIONS: CoeffSection[] = [
 function Accordion({ title, ref: refLabel, children }: { title: string; ref: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-zinc-700 rounded-xl overflow-hidden">
+    <div className="overflow-hidden rounded-lg border">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-5 py-4 bg-zinc-800 hover:bg-zinc-700 transition-colors text-left"
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50"
       >
-        <div>
-          <span className="font-semibold text-zinc-200">{title}</span>
-          <span className="ml-3 text-xs text-zinc-500 font-normal">{refLabel}</span>
+        <div className="min-w-0">
+          <p className="font-medium text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">{refLabel}</p>
         </div>
-        <span className="text-zinc-500 text-lg">{open ? '▲' : '▼'}</span>
+        <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
-      {open && <div className="p-5 bg-zinc-800 space-y-3">{children}</div>}
+      {open && <div className="space-y-2 border-t px-4 py-3">{children}</div>}
     </div>
   );
 }
@@ -92,8 +99,8 @@ export function ConfigEditorView({
 }: ConfigEditorViewProps) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-xl text-zinc-400">Caricamento...</div>
+      <div className="flex justify-center py-24 text-muted-foreground">
+        <Loader2 className="size-6 animate-spin" />
       </div>
     );
   }
@@ -101,152 +108,132 @@ export function ConfigEditorView({
   return (
     <div className="space-y-6">
       {/* Prezzi per comune */}
-      <div className="bg-zinc-800 rounded-2xl border border-zinc-700 overflow-hidden">
-        <div className="p-6 border-b border-zinc-700">
-          <h2 className="text-lg font-bold text-zinc-200">Prezzi per Comune</h2>
-          <p className="text-zinc-400 text-sm mt-1">
-            Imposta il prezzo al mq per ogni comune. Il valore influenza direttamente la stima base.
-          </p>
-        </div>
-        <div className="p-8 space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Prezzi per comune</CardTitle>
+          <CardDescription>Prezzo al mq di partenza per ogni comune: influenza direttamente la stima base.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {ALLOWED_CITIES.map(city => (
-            <div key={city} className="bg-zinc-800 rounded-xl p-5 border border-zinc-700">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="font-semibold text-zinc-200">{city}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Preview 100 mq: €{calculatePreview(city).toLocaleString('it-IT')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-zinc-400 text-sm">€/mq</span>
-                  <input
-                    type="number"
-                    value={config.pricePerSqmByCity[city] ?? config.pricePerSqmDefault}
-                    onChange={(e) => onCityPriceChange(city, parseFloat(e.target.value) || 0)}
-                    className="w-28 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-right font-bold text-zinc-200 focus:ring-2 focus:ring-red-700 focus:outline-none"
-                    step={50} min={100} max={20000}
-                  />
-                </div>
-              </div>
-              <input
-                type="range"
-                value={config.pricePerSqmByCity[city] ?? config.pricePerSqmDefault}
-                onChange={(e) => onCityPriceChange(city, parseFloat(e.target.value))}
-                min={100} max={10000} step={50}
-                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-700"
-              />
-              <div className="flex justify-between text-xs text-zinc-500 mt-1">
-                <span>€100</span><span>€10.000</span>
-              </div>
-            </div>
-          ))}
-
-          <div className="bg-zinc-800 rounded-xl p-5 border border-dashed border-zinc-600">
-            <p className="text-sm font-semibold text-zinc-300 mb-3">Prezzo default (comuni non in lista)</p>
-            <ConfigField
-              label="€/mq default"
-              value={config.pricePerSqmDefault}
-              onChange={onDefaultPriceChange}
-              min={100} max={10000} step={50}
+            <PriceField
+              key={city}
+              label={city}
+              hint={`Anteprima 100 mq: € ${calculatePreview(city).toLocaleString('it-IT')}`}
+              value={config.pricePerSqmByCity[city] ?? config.pricePerSqmDefault}
+              onChange={(v) => onCityPriceChange(city, v)}
+              min={100} max={10000} inputMax={20000} step={50}
             />
-          </div>
-        </div>
-      </div>
+          ))}
+          <PriceField
+            label="Prezzo default"
+            hint="Comuni non in lista"
+            value={config.pricePerSqmDefault}
+            onChange={onDefaultPriceChange}
+            min={100} max={10000} step={50}
+            dashed
+          />
+        </CardContent>
+      </Card>
 
       {/* Coefficienti Immobiliari */}
-      <div className="bg-zinc-800 rounded-2xl border border-zinc-700 overflow-hidden">
-        <div className="p-6 border-b border-zinc-700">
-          <h2 className="text-lg font-bold text-zinc-200">Coefficienti Immobiliari</h2>
-          <p className="text-zinc-400 text-sm mt-1">
-            Modifica i moltiplicatori per ogni caratteristica. 1,00 = neutro, &gt;1,00 = premium, &lt;1,00 = sconto.
-          </p>
-        </div>
-        <div className="p-6 space-y-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Coefficienti immobiliari</CardTitle>
+          <CardDescription>
+            Moltiplicatori per ogni caratteristica: 1,00 = neutro, &gt; 1,00 = premium, &lt; 1,00 = sconto.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
           {COEFF_SECTIONS.map(section => {
             const tableValues = config.coefficienti[section.key] as Record<string, number>;
             return (
               <Accordion key={section.key} title={section.title} ref={section.ref}>
                 {Object.entries(section.labels).map(([k, label]) => (
                   <div key={k} className="flex items-center gap-4">
-                    <span className="flex-1 text-sm text-zinc-300">{label}</span>
-                    <input
+                    <span className="flex-1 text-sm text-foreground/90">{label}</span>
+                    <Input
                       type="number"
+                      inputMode="decimal"
                       value={(tableValues[k] ?? 1.00).toFixed(2)}
                       onChange={(e) => {
                         const v = parseFloat(e.target.value);
                         if (!isNaN(v)) onCoefficienteChange(section.key, k, v);
                       }}
-                      className="w-24 px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-right text-sm font-mono text-zinc-200 focus:ring-2 focus:ring-red-700 focus:outline-none"
+                      className="w-24 text-right font-mono"
                       step={0.01} min={0.01} max={5.00}
+                      aria-label={`${section.title}: ${label}`}
                     />
                   </div>
                 ))}
               </Accordion>
             );
           })}
+        </CardContent>
+      </Card>
+
+      {/* Save / Reset: barra fissa in basso, sempre raggiungibile */}
+      <div className="sticky bottom-3 z-20 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusMessage message={message} className="w-full sm:order-2 sm:w-auto sm:flex-1" />
+          <Button variant="ghost" onClick={onReset} disabled={saving} className="sm:order-1" aria-label="Ripristina default">
+            <RotateCcw />
+            <span className="hidden sm:inline">Ripristina default</span>
+          </Button>
+          <Button onClick={onSave} disabled={saving} size="lg" className="flex-1 sm:order-3 sm:ml-auto sm:flex-none">
+            {saving ? <Loader2 className="animate-spin" /> : <Save />}
+            {saving ? 'Salvataggio…' : 'Salva configurazione'}
+          </Button>
         </div>
-      </div>
-
-      {/* Save / Reset */}
-      <div className="bg-zinc-800 rounded-2xl border border-zinc-700 p-6 space-y-3">
-        <button
-          onClick={onSave}
-          disabled={saving}
-          className="w-full bg-gradient-to-r from-green-700 to-green-600 text-white font-bold py-4 px-6 rounded-xl hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-        >
-          {saving ? '💾 Salvataggio...' : '💾 Salva Configurazione'}
-        </button>
-        <button
-          onClick={onReset}
-          className="w-full bg-zinc-700 text-zinc-300 font-semibold py-2 px-6 rounded-xl hover:bg-zinc-600 transition text-sm"
-        >
-          ↩ Ripristina default
-        </button>
-
-        {message && (
-          <div className={`p-4 rounded-lg text-center font-semibold ${
-            message.includes('✅') ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-          }`}>
-            {message}
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-function ConfigField({
-  label, value, onChange, min, max, step,
+function PriceField({
+  label, hint, value, onChange, min, max, inputMax = max, step, dashed,
 }: {
   label: string;
+  hint: string;
   value: number;
   onChange: (value: number) => void;
   min: number;
+  /** Fondo scala dello slider */
   max: number;
+  /** Massimo digitabile nel campo numerico */
+  inputMax?: number;
   step: number;
+  dashed?: boolean;
 }) {
   return (
-    <div className="bg-zinc-800 rounded-xl p-5 border border-zinc-700">
-      <div className="flex items-center justify-between mb-3">
-        <label className="font-semibold text-zinc-200 text-lg">{label}</label>
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className="w-28 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-right font-bold text-zinc-200 focus:ring-2 focus:ring-red-700 focus:outline-none"
-          step={step} min={min} max={max}
-        />
+    <div className={cn('rounded-lg border p-4', dashed && 'border-dashed')}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-medium text-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground">{hint}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-sm text-muted-foreground sm:inline">€/mq</span>
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={value}
+            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+            className="w-28 text-right font-semibold"
+            step={step} min={min} max={inputMax}
+            aria-label={`${label} €/mq`}
+          />
+        </div>
       </div>
       <input
         type="range"
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         min={min} max={max} step={step}
-        className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-700"
+        className="w-full cursor-pointer accent-primary"
+        aria-label={`${label} €/mq (cursore)`}
       />
-      <div className="flex justify-between text-xs text-zinc-500 mt-1">
-        <span>{min}</span><span>{max}</span>
+      <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+        <span>€ {min.toLocaleString('it-IT')}</span><span>€ {max.toLocaleString('it-IT')}</span>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 'use client';
 
+import { Download, FileSpreadsheet, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export interface ExcelFile {
@@ -26,6 +27,11 @@ function formatFileSize(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 }
 
+/** Nome del file senza la cartella (valutazioni/) */
+function displayName(pathname: string): string {
+  return pathname.slice(pathname.lastIndexOf('/') + 1);
+}
+
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString('it-IT', {
     day: '2-digit',
@@ -37,74 +43,70 @@ function formatDate(dateString: string): string {
 }
 
 export function FileTableView({ files, loading, deletingUrl, onDelete, onDownload, onRefresh }: FileTableViewProps) {
-  if (loading) {
-    return (
-      <Card className="bg-zinc-800 border-zinc-700">
-        <CardContent className="py-12 text-center">
-          <p className="text-zinc-400">Caricamento file...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="bg-zinc-800 border-zinc-700">
+    <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-zinc-200">📂 File Excel Generati</CardTitle>
-            <CardDescription className="text-zinc-400">Totale file: {files.length}</CardDescription>
-          </div>
-          <Button onClick={onRefresh} variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
-            🔄 Aggiorna
+        <CardTitle>Report Excel</CardTitle>
+        <CardDescription>{loading ? 'Caricamento…' : `${files.length} file`}</CardDescription>
+        <CardAction>
+          <Button onClick={onRefresh} variant="outline" size="sm" disabled={loading}>
+            <RefreshCw className={loading ? 'animate-spin' : undefined} />
+            Aggiorna
           </Button>
-        </div>
+        </CardAction>
       </CardHeader>
 
       <CardContent>
-        {files.length === 0 ? (
-          <div className="text-center py-12 text-zinc-500">
-            <p className="text-lg">Nessun file presente</p>
-            <p className="text-sm mt-2">I file Excel generati appariranno qui</p>
+        {loading ? (
+          <div className="flex justify-center py-12 text-muted-foreground">
+            <Loader2 className="size-6 animate-spin" />
+          </div>
+        ) : files.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground">
+            <FileSpreadsheet className="mx-auto mb-3 size-8 opacity-50" />
+            <p>Nessun report presente</p>
+            <p className="mt-1 text-sm">I report generati dallo Step 2 appariranno qui</p>
           </div>
         ) : (
-          <div className="rounded-md border border-zinc-700 overflow-x-auto">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="border-zinc-700 hover:bg-zinc-800">
-                  <TableHead className="w-[50%] text-zinc-400">Nome File</TableHead>
-                  <TableHead className="text-zinc-400">Dimensione</TableHead>
-                  <TableHead className="text-zinc-400">Data Creazione</TableHead>
-                  <TableHead className="text-right text-zinc-400">Azioni</TableHead>
+                <TableRow>
+                  <TableHead>File</TableHead>
+                  <TableHead className="hidden sm:table-cell">Dimensione</TableHead>
+                  <TableHead className="hidden sm:table-cell">Data</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {files.map((file) => (
-                  <TableRow key={file.url} className="border-zinc-800 hover:bg-zinc-800">
-                    <TableCell className="font-medium text-zinc-200">
+                  <TableRow key={file.url}>
+                    <TableCell className="max-w-[12rem] sm:max-w-xs">
                       <div className="flex items-center gap-2">
-                        <span className="text-green-400">📊</span>
-                        <span className="truncate max-w-xs">{file.filename}</span>
+                        <FileSpreadsheet className="size-4 shrink-0 text-emerald-400" />
+                        <div className="min-w-0">
+                          <p className="truncate" title={file.filename}>{displayName(file.filename)}</p>
+                          <p className="text-xs text-muted-foreground sm:hidden">{formatDate(file.uploadedAt)}</p>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-zinc-300">{formatFileSize(file.size)}</TableCell>
-                    <TableCell className="text-zinc-300">{formatDate(file.uploadedAt)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="hidden text-muted-foreground sm:table-cell">{formatFileSize(file.size)}</TableCell>
+                    <TableCell className="hidden text-muted-foreground sm:table-cell">{formatDate(file.uploadedAt)}</TableCell>
+                    <TableCell>
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onDownload(file)}
-                          className="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                        >
-                          ⬇️ Scarica
-                        </button>
+                        <Button size="sm" variant="outline" onClick={() => onDownload(file)} aria-label={`Scarica ${file.filename}`}>
+                          <Download />
+                          <span className="hidden sm:inline">Scarica</span>
+                        </Button>
                         <Button
                           size="sm"
                           variant="destructive"
                           onClick={() => onDelete(file)}
                           disabled={deletingUrl === file.url}
+                          aria-label={`Elimina ${file.filename}`}
                         >
-                          {deletingUrl === file.url ? '...' : '🗑️ Elimina'}
+                          {deletingUrl === file.url ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                          <span className="hidden sm:inline">Elimina</span>
                         </Button>
                       </div>
                     </TableCell>

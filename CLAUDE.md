@@ -38,7 +38,7 @@ Il coefficiente piano ha due tabelle (con/senza ascensore): per questo l'admin m
 - `lib/streets/` — prezzo €/mq per via/civico (blob `streets/<slug>.json`, seed JSON come fallback).
 - `lib/excel/valuation-report.ts` — report Excel; `lib/reports-storage.ts` — dove viene salvato.
 - `lib/email.ts` — email Resend; `lib/logger.ts` — `createLogger('ctx')`, log JSON.
-- Admin: `components/admin/*View.tsx` sono View pure (solo props), `*.tsx` omonimi sono i Controller (stato + fetch).
+- Admin: `components/admin/*View.tsx` sono View pure (solo props), `*.tsx` omonimi sono i Controller (stato + fetch). Ogni pagina `/admin/*` usa `AdminPage` (`components/admin/AdminShell.tsx`: header, navigazione, controllo token); UI con i componenti `components/ui/*` (shadcn) e i token del tema, esiti con `StatusMessage`.
 
 ## Regole di sicurezza (non negoziabili)
 

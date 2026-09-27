@@ -6,7 +6,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <>
       {children}
-      <span className="fixed bottom-2 right-3 text-xs text-zinc-500 select-none">v{pkg.version}</span>
+      <span className="pointer-events-none fixed bottom-2 right-3 select-none text-xs text-muted-foreground">v{pkg.version}</span>
     </>
   );
 }
