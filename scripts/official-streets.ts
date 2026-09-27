@@ -9,11 +9,14 @@
 // clear:  cancella le vie del comune (resta il prezzo di default).
 // Con --write salva sul blob del comune (store di BLOB_READ_WRITE_TOKEN), aggiorna il seed in lib/streets/
 // e, prima di scrivere, fa un backup del blob attuale in --backup-dir (default: ./backups).
+// .env.local punta allo store di sviluppo: per scrivere in produzione usare un env file con il token di
+// produzione e senza BLOB_PRODUCTION_STORE_ID (es. `vercel env pull .env.production.local --environment=production`).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { del } from '@vercel/blob';
 import { readBlobJson, writeBlobJson } from '@/lib/blob-json-cache';
+import { assertBlobWritable } from '@/lib/blob-env';
 import { ALLOWED_CITIES, cityToSlug } from '@/lib/cities';
 import { getSeedStreetPrices, getCityDefaultPrice } from '@/lib/streets';
 import { getOfficialStreets } from '@/lib/streets/anncsu';
@@ -101,6 +104,7 @@ async function clear(slug: string) {
   if (!write) return;
   if (blob) {
     backup(slug, blob);
+    assertBlobWritable(`delete streets/${slug}.json`);
     await del(`streets/${slug}.json`);
     console.log(`  ✅ cancellato streets/${slug}.json`);
   }

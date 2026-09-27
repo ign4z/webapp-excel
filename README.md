@@ -23,7 +23,7 @@ Applicazione web per la stima del valore di immobili residenziali nella zona sud
 
 | Variabile | Descrizione |
 |---|---|
-| `BLOB_READ_WRITE_TOKEN` | Token di uno store Vercel Blob con accesso **Private**: configurazione, prezzi strade e report Excel |
+| `BLOB_READ_WRITE_TOKEN` | Token di uno store Vercel Blob con accesso **Private**: configurazione, prezzi strade e report Excel. In locale quello dello store di sviluppo (vedi sotto) |
 | `ADMIN_TOKEN` | Token per il pannello admin: query param `?token=...` sulle pagine, header `Authorization: Bearer` sulle API |
 | `ADMIN_USERNAME` | Username HTTP Basic Auth pannello admin |
 | `ADMIN_PASSWORD` | Password HTTP Basic Auth pannello admin |
@@ -42,6 +42,7 @@ Applicazione web per la stima del valore di immobili residenziali nella zona sud
 | `SESSION_SECRET` | Segreto HMAC per il token di sessione Step 1 → Step 2 (fallback: `ADMIN_TOKEN`) |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Rate limit condiviso tra istanze per i form pubblici. Se assenti, limite in memoria per istanza |
 | `LOG_LEVEL` | `error` \| `warn` \| `info` \| `debug` \| `trace` (default `info` in produzione) |
+| `BLOB_PRODUCTION_STORE_ID` | Solo in `.env.local`: id dello store di produzione. Se il token locale gli appartiene, le scritture su Blob vengono rifiutate |
 | `EMAIL_FROM` | Mittente email, es. `Valutazione Immobiliare <noreply@tuodominio.it>` (default: sandbox Resend) |
 
 ## Sviluppo
@@ -56,6 +57,23 @@ npm test           # test Vitest (cartella tests/): valutazione, strade, sicurez
 ```
 
 Il server di sviluppo supporta hot reload. Le chiamate ai blob Vercel funzionano anche in locale se `BLOB_READ_WRITE_TOKEN` è configurato in `.env.local`.
+
+### Store Blob di sviluppo
+
+In locale si usa uno store Blob **separato** da quello di produzione, così le modifiche fatte dall'admin in locale, i report di prova e gli script non toccano i dati reali.
+
+1. Su Vercel → **Storage** → **Create** → **Blob**, accesso **Private** (es. `webapp-excel-dev`)
+2. Collegalo al progetto solo per gli ambienti **Development** e **Preview**; lo store di produzione resta collegato solo a **Production**
+3. `vercel env pull .env.local` (o copia a mano il token dello store di sviluppo in `BLOB_READ_WRITE_TOKEN`)
+4. In `.env.local` imposta `BLOB_PRODUCTION_STORE_ID` con l'id dello store di produzione (lo trovi nelle impostazioni dello store, `store_…`, oppure è il pezzo del token tra `vercel_blob_rw_` e il `_` successivo). Se per errore il token locale torna quello di produzione, ogni scrittura o cancellazione su Blob fallisce con un errore esplicito
+5. Opzionale, per partire con i dati reali: copia config e prezzi strade dalla produzione (sola lettura sulla produzione, i report non vengono copiati)
+
+   ```bash
+   PROD_BLOB_READ_WRITE_TOKEN=<token produzione> node scripts/copy-blob-to-dev.mjs          # anteprima
+   PROD_BLOB_READ_WRITE_TOKEN=<token produzione> node scripts/copy-blob-to-dev.mjs --apply  # copia
+   ```
+
+Con lo store di sviluppo vuoto l'app usa i default (`lib/config.defaults.json`) e i seed delle vie (`lib/streets/*.json`).
 
 ## Architettura
 
@@ -237,7 +255,6 @@ I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in 
 ## TODO
 
 1. **Grafica interna**: migliorare l'aspetto del pannello admin, oggi poco curato.
-2. **Store separati dev/produzione**: oggi lo store Vercel Blob è unico, quindi le modifiche fatte in locale finiscono in produzione. Serve uno store dedicato allo sviluppo (token diverso in `.env.local`).
 
 ## Versioni e rilascio
 

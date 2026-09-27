@@ -3,6 +3,7 @@
 // I file non sono raggiungibili via URL: l'admin li scarica tramite /api/admin/files/download (autenticata).
 
 import { put, list, del, get } from '@vercel/blob';
+import { assertBlobWritable } from '@/lib/blob-env';
 
 export interface StoredReport {
   url: string;
@@ -16,6 +17,7 @@ const BLOB_HOST_SUFFIX = '.blob.vercel-storage.com';
 
 /** Salva un report sotto valutazioni/ e restituisce l'URL (non accessibile senza token). */
 export async function saveReport(filename: string, content: Buffer): Promise<{ url: string }> {
+  assertBlobWritable(`save ${filename}`);
   const blob = await put(`${REPORTS_PREFIX}${filename}`, content, { access: 'private' });
   return { url: blob.url };
 }
@@ -46,6 +48,7 @@ export function isReportUrl(value: string): boolean {
 }
 
 export async function deleteReport(url: string): Promise<void> {
+  assertBlobWritable('delete report');
   await del(url);
 }
 

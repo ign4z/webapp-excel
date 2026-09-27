@@ -5,6 +5,7 @@
 // non solo a quella che ha gestito la richiesta di salvataggio.
 
 import { list, get, put } from '@vercel/blob';
+import { assertBlobWritable } from '@/lib/blob-env';
 
 type Entry = { version: number; data: unknown };
 
@@ -37,6 +38,7 @@ export async function readBlobJson<T>(path: string): Promise<T | null> {
 
 /** Salva un JSON (sovrascrivendo) e aggiorna subito la cache dell'istanza corrente. */
 export async function writeBlobJson(path: string, data: unknown): Promise<void> {
+  assertBlobWritable(`write ${path}`);
   await put(path, JSON.stringify(data, null, 2), {
     access: 'private',
     allowOverwrite: true,
