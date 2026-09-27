@@ -56,16 +56,29 @@ npm run typecheck  # typecheck TypeScript
 npm test           # test Vitest (cartella tests/): valutazione, strade, sicurezza, API form, import Excel, report
 ```
 
-Il server di sviluppo supporta hot reload. Le chiamate ai blob Vercel funzionano anche in locale se `BLOB_READ_WRITE_TOKEN` è configurato in `.env.local`.
+Il server di sviluppo supporta hot reload. In locale le chiamate Blob vanno allo store di sviluppo (vedi sotto).
 
 ### Store Blob di sviluppo
 
 In locale si usa uno store Blob **separato** da quello di produzione, così le modifiche fatte dall'admin in locale, i report di prova e gli script non toccano i dati reali.
 
-1. Su Vercel → **Storage** → **Create** → **Blob**, accesso **Private** (es. `webapp-excel-dev`)
-2. Collegalo al progetto solo per gli ambienti **Development** e **Preview**; lo store di produzione resta collegato solo a **Production**
-3. `vercel env pull .env.local` (o copia a mano il token dello store di sviluppo in `BLOB_READ_WRITE_TOKEN`)
-4. In `.env.local` imposta `BLOB_PRODUCTION_STORE_ID` con l'id dello store di produzione (lo trovi nelle impostazioni dello store, `store_…`, oppure è il pezzo del token tra `vercel_blob_rw_` e il `_` successivo). Se per errore il token locale torna quello di produzione, ogni scrittura o cancellazione su Blob fallisce con un errore esplicito
+Gli store creati di recente non hanno un token di scrittura: `@vercel/blob` (≥ 2.8) si autentica con OIDC (`VERCEL_OIDC_TOKEN` + `BLOB_STORE_ID`), che ha la precedenza su `BLOB_READ_WRITE_TOKEN`.
+
+| Ambiente Vercel | Store | Variabili |
+|---|---|---|
+| Production | produzione | `BLOB_READ_WRITE_TOKEN` (nessun `BLOB_STORE_ID`) |
+| Development, Preview | `webapp-excel-dev` | `BLOB_STORE_ID=store_…` dello store dev (+ `VERCEL_OIDC_TOKEN`, automatico) |
+
+1. Su Vercel → **Storage** → **Create** → **Blob**, accesso **Private** (es. `webapp-excel-dev`), collegato al progetto per **Development** e **Preview**
+2. Imposta le variabili come nella tabella (lo store di produzione non deve dare `BLOB_READ_WRITE_TOKEN` né `BLOB_STORE_ID` a Development/Preview)
+3. In locale le variabili Vercel vanno in `.env.development.local`, così `.env.local` (chiavi admin, reCAPTCHA di test…) non viene sovrascritto:
+
+   ```bash
+   vercel env pull .env.development.local --environment=development --yes
+   ```
+
+   `VERCEL_OIDC_TOKEN` scade dopo circa 12 ore: se le chiamate Blob falliscono con un errore di autenticazione, rilancia il comando. In `.env.local` non deve esserci il `BLOB_READ_WRITE_TOKEN` di produzione
+4. In `.env.local` imposta `BLOB_PRODUCTION_STORE_ID` con l'id dello store di produzione (`store_…`). Se per errore le credenziali locali tornano quelle di produzione, ogni scrittura o cancellazione su Blob fallisce con un errore esplicito
 5. Opzionale, per partire con i dati reali: copia config e prezzi strade dalla produzione (sola lettura sulla produzione, i report non vengono copiati)
 
    ```bash
@@ -212,9 +225,9 @@ L'editor strade (`/admin/streets`) permette di:
 - **Codici catastali:** stanno in `CITY_CADASTRAL_CODES` (`lib/cities.ts`). Le frazioni Fizzonasco e Tolcinasco non hanno un codice proprio, quindi per loro l'import non è disponibile.
 - **Operazioni in blocco da terminale**, con la stessa logica dell'editor:
   ```bash
-  npx tsx --env-file=.env.local scripts/official-streets.ts import opera           # anteprima
-  npx tsx --env-file=.env.local scripts/official-streets.ts import opera --write   # scrive blob + seed (backup in ./backups)
-  npx tsx --env-file=.env.local scripts/official-streets.ts clear siziano --write  # svuota le vie del comune
+  npx tsx --env-file=.env.local --env-file=.env.development.local scripts/official-streets.ts import opera           # anteprima
+  npx tsx --env-file=.env.local --env-file=.env.development.local scripts/official-streets.ts import opera --write   # scrive blob + seed (backup in ./backups)
+  npx tsx --env-file=.env.local --env-file=.env.development.local scripts/official-streets.ts clear siziano --write  # svuota le vie del comune
   ```
 
 ## API Reference

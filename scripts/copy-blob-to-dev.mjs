@@ -1,5 +1,6 @@
 // scripts/copy-blob-to-dev.mjs
-// Copia config e prezzi strade dallo store Blob di PRODUZIONE allo store di SVILUPPO (quello di .env.local).
+// Copia config e prezzi strade dallo store Blob di PRODUZIONE allo store di SVILUPPO (quello di .env.local:
+// OIDC con VERCEL_OIDC_TOKEN + BLOB_STORE_ID, oppure BLOB_READ_WRITE_TOKEN).
 // Solo lettura sulla produzione. Non copia i report .xlsx (dati personali dei clienti).
 //
 // Uso (il token di produzione si passa solo per questo comando, non va salvato in .env.local):
@@ -14,15 +15,18 @@ const { list, put, get } = require('@vercel/blob');
 
 const apply = process.argv.includes('--apply');
 const PROD = process.env.PROD_BLOB_READ_WRITE_TOKEN;
-const DEV = process.env.BLOB_READ_WRITE_TOKEN;
-const storeId = (token) => token?.match(/^vercel_blob_rw_([A-Za-z0-9]+)_/)?.[1]?.toLowerCase() ?? null;
+const tokenStore = (token) => token?.match(/^vercel_blob_rw_([A-Za-z0-9]+)_/)?.[1]?.toLowerCase() ?? null;
+// Stessa precedenza di @vercel/blob: OIDC (VERCEL_OIDC_TOKEN + BLOB_STORE_ID) prima di BLOB_READ_WRITE_TOKEN
+const devStore = process.env.VERCEL_OIDC_TOKEN && process.env.BLOB_STORE_ID
+  ? process.env.BLOB_STORE_ID.replace(/^store_/i, '').toLowerCase()
+  : tokenStore(process.env.BLOB_READ_WRITE_TOKEN);
 
-if (!PROD || !DEV) {
-  console.error('Servono PROD_BLOB_READ_WRITE_TOKEN (store produzione) e BLOB_READ_WRITE_TOKEN in .env.local (store sviluppo).');
+if (!PROD || !devStore) {
+  console.error('Servono PROD_BLOB_READ_WRITE_TOKEN (store produzione) e le credenziali dello store di sviluppo in .env.local.');
   process.exit(1);
 }
-if (PROD === DEV || storeId(PROD) === storeId(DEV)) {
-  console.error('BLOB_READ_WRITE_TOKEN di .env.local punta allo store di produzione: mettici il token dello store di sviluppo.');
+if (tokenStore(PROD) === devStore) {
+  console.error('Le credenziali di .env.local puntano allo store di produzione: rifai `vercel env pull .env.local`.');
   process.exit(1);
 }
 
@@ -50,7 +54,8 @@ for (const b of toCopy) {
   const text = await new Response(res.stream).text();
   JSON.parse(text); // deve essere JSON valido
 
-  await put(b.pathname, text, { access: 'private', token: DEV, allowOverwrite: true, contentType: 'application/json' });
+  // Senza token: credenziali di .env.local (store di sviluppo)
+  await put(b.pathname, text, { access: 'private', allowOverwrite: true, contentType: 'application/json' });
   console.log(`  ✓ ${b.pathname}`);
 }
 

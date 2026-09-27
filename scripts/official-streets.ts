@@ -1,16 +1,16 @@
 // scripts/official-streets.ts
 // Operazioni una tantum sulle liste vie, con la stessa logica dell'editor admin (lib/street-import.ts).
 //
-//   npx tsx --env-file=.env.local scripts/official-streets.ts import opera locate-di-triulzi          (anteprima)
-//   npx tsx --env-file=.env.local scripts/official-streets.ts import opera locate-di-triulzi --write  (scrive)
-//   npx tsx --env-file=.env.local scripts/official-streets.ts clear siziano tolcinasco --write        (svuota)
+//   npx tsx --env-file=.env.local --env-file=.env.development.local scripts/official-streets.ts import opera locate-di-triulzi          (anteprima)
+//   npx tsx --env-file=.env.local --env-file=.env.development.local scripts/official-streets.ts import opera locate-di-triulzi --write  (scrive)
+//   npx tsx --env-file=.env.local --env-file=.env.development.local scripts/official-streets.ts clear siziano tolcinasco --write        (svuota)
 //
 // import: sostituisce la lista con le vie ufficiali ANNCSU (nomi Google, prezzi esistenti mantenuti).
 // clear:  cancella le vie del comune (resta il prezzo di default).
 // Con --write salva sul blob del comune (store di BLOB_READ_WRITE_TOKEN), aggiorna il seed in lib/streets/
 // e, prima di scrivere, fa un backup del blob attuale in --backup-dir (default: ./backups).
-// .env.local punta allo store di sviluppo: per scrivere in produzione usare un env file con il token di
-// produzione e senza BLOB_PRODUCTION_STORE_ID (es. `vercel env pull .env.production.local --environment=production`).
+// In locale le credenziali Blob sono quelle dello store di sviluppo (.env.development.local). Per scrivere in produzione
+// usare solo un env file con il token di produzione (es. `vercel env pull .env.production.local --environment=production`).
 
 import fs from 'node:fs';
 import path from 'node:path';

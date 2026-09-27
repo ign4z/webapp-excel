@@ -20,7 +20,7 @@ npm run build
 
 Prima di considerare finito un lavoro: `npm run lint && npm run typecheck && npm test`.
 Un hook PostToolUse (`.claude/settings.json` → `scripts/hooks/lint-edited.mjs`) lancia ESLint su ogni file modificato: gli errori bloccano e vanno corretti subito.
-Variabili d'ambiente: vedi `.env.example` / README. In locale le chiamate Blob funzionano con `BLOB_READ_WRITE_TOKEN` in `.env.local`.
+Variabili d'ambiente: vedi `.env.example` / README. In locale Blob usa lo **store di sviluppo** via OIDC (`BLOB_STORE_ID` + `VERCEL_OIDC_TOKEN` in `.env.development.local`, da `vercel env pull`): mai il token di produzione in locale. Le scritture passano da `assertBlobWritable()` (`lib/blob-env.ts`).
 
 ## Flusso Step 1 → Step 2
 

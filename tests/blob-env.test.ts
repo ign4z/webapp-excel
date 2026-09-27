@@ -1,8 +1,13 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { blobStoreId, assertBlobWritable } from '@/lib/blob-env';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { blobStoreId, activeBlobStoreId, assertBlobWritable } from '@/lib/blob-env';
 
 const PROD_TOKEN = 'vercel_blob_rw_Prod123abc_segretoProduzione';
 const DEV_TOKEN = 'vercel_blob_rw_Dev456def_segretoSviluppo';
+
+beforeEach(() => {
+  vi.stubEnv('VERCEL_OIDC_TOKEN', '');
+  vi.stubEnv('BLOB_STORE_ID', '');
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -55,5 +60,29 @@ describe('assertBlobWritable', () => {
     vi.stubEnv('BLOB_PRODUCTION_STORE_ID', 'Prod123abc');
     vi.stubEnv('BLOB_READ_WRITE_TOKEN', PROD_TOKEN);
     expect(() => assertBlobWritable('write config')).not.toThrow();
+  });
+});
+
+describe('activeBlobStoreId (stessa precedenza di @vercel/blob)', () => {
+  it("con OIDC usa BLOB_STORE_ID anche se c'è un token di scrittura", () => {
+    vi.stubEnv('BLOB_READ_WRITE_TOKEN', PROD_TOKEN);
+    vi.stubEnv('VERCEL_OIDC_TOKEN', 'oidc');
+    vi.stubEnv('BLOB_STORE_ID', 'store_Dev456def');
+    expect(activeBlobStoreId()).toBe('dev456def');
+  });
+
+  it('senza OIDC usa lo store del token', () => {
+    vi.stubEnv('BLOB_READ_WRITE_TOKEN', PROD_TOKEN);
+    vi.stubEnv('BLOB_STORE_ID', 'store_Dev456def');
+    expect(activeBlobStoreId()).toBe('prod123abc');
+  });
+
+  it('blocca le scritture se lo store OIDC è quello di produzione', () => {
+    vi.stubEnv('VERCEL_ENV', 'development');
+    vi.stubEnv('BLOB_PRODUCTION_STORE_ID', 'store_Prod123abc');
+    vi.stubEnv('BLOB_READ_WRITE_TOKEN', DEV_TOKEN);
+    vi.stubEnv('VERCEL_OIDC_TOKEN', 'oidc');
+    vi.stubEnv('BLOB_STORE_ID', 'store_Prod123abc');
+    expect(() => assertBlobWritable('write config')).toThrow();
   });
 });
