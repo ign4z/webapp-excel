@@ -9,6 +9,7 @@ import {
   VLCard,
   FieldGroup,
   PrimaryButton,
+  Spinner,
   tokens,
 } from './shared';
 import { ALLOWED_CITIES } from '@/lib/cities';
@@ -319,7 +320,7 @@ export function Step1View({
           )}
 
           <PrimaryButton disabled={isLoading}>
-            {isLoading ? 'Elaborazione…' : 'Calcola valutazione →'}
+            {isLoading ? <><Spinner /> Elaborazione…</> : 'Calcola valutazione →'}
           </PrimaryButton>
         </form>
       </div>

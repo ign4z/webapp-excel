@@ -10,6 +10,7 @@ import {
   FieldGroup,
   PrimaryButton,
   GhostButton,
+  Spinner,
   tokens,
 } from '@/components/valuation/shared';
 import type {
@@ -382,7 +383,7 @@ export function Step2View({
               ← Indietro
             </GhostButton>
             <PrimaryButton disabled={isLoading}>
-              {isLoading ? 'Elaborazione…' : 'Completa valutazione →'}
+              {isLoading ? <><Spinner /> Elaborazione…</> : 'Completa valutazione →'}
             </PrimaryButton>
           </div>
         </form>

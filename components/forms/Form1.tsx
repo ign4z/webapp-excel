@@ -49,6 +49,11 @@ export default function Form1() {
   // useWatch (non form.watch()): con il React Compiler watch() non fa ri-renderizzare il componente
   const selectedCity = useWatch({ control: form.control, name: 'city' });
 
+  // Step 2 già scaricato quando arriva la risposta di form-1
+  useEffect(() => {
+    router.prefetch('/step-2');
+  }, [router]);
+
   // Ripristina i campi se l'utente torna da step-2 usando il pulsante indietro
   useEffect(() => {
     const stored = sessionStorage.getItem('form1Data');
@@ -182,11 +187,11 @@ export default function Form1() {
       sessionStorage.setItem('sessionToken', data.sessionToken);
 
       toast({ title: 'Valutazione calcolata', description: 'Ti abbiamo inviato una email con i dettagli.' });
-      setTimeout(() => router.push('/step-2'), 2500);
+      // isLoading resta attivo fino al cambio pagina: niente secondo invio nel frattempo
+      router.push('/step-2');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Errore sconosciuto';
       toast({ title: 'Errore', description: message, variant: 'destructive' });
-    } finally {
       setIsLoading(false);
     }
   }

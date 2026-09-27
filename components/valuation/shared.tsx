@@ -337,6 +337,32 @@ export function PrimaryButton({
   );
 }
 
+/* ─── SPINNER ─── */
+export function Spinner({ size = '1rem', color = 'currentColor' }: { size?: string; color?: string }) {
+  return (
+    <>
+      <style>{`
+        @keyframes vl-spin { to { transform: rotate(360deg); } }
+        .vl-spinner {
+          display: inline-block;
+          flex-shrink: 0;
+          border: 2px solid transparent;
+          border-top-color: var(--spinner-color);
+          border-right-color: var(--spinner-color);
+          border-radius: 50%;
+          animation: vl-spin 0.7s linear infinite;
+        }
+      `}</style>
+      <span
+        className="vl-spinner"
+        role="status"
+        aria-label="Caricamento"
+        style={{ width: size, height: size, '--spinner-color': color } as React.CSSProperties}
+      />
+    </>
+  );
+}
+
 /* ─── GHOST BUTTON ─── */
 export function GhostButton({
   children,

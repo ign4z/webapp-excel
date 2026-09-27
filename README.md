@@ -237,8 +237,8 @@ I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in 
 ## TODO
 
 1. **Grafica interna**: migliorare l'aspetto del pannello admin, oggi poco curato.
-2. **Passaggio da Step 1 a Step 2**: dopo l'invio la pagina sembra ferma, forse perché aspetta l'invio della mail. Serve un feedback visibile (caricamento) e una navigazione più rapida.
-3. **Store separati dev/produzione**: oggi lo store Vercel Blob è unico, quindi le modifiche fatte in locale finiscono in produzione. Serve uno store dedicato allo sviluppo (token diverso in `.env.local`).
+2. **Store separati dev/produzione**: oggi lo store Vercel Blob è unico, quindi le modifiche fatte in locale finiscono in produzione. Serve uno store dedicato allo sviluppo (token diverso in `.env.local`).
+3. **Versione mobile**: è il target principale dell'app e va curata. Il campo via dello Step 1 su mobile si vede male: deve aprirsi a tutta pagina.
 
 ## Versioni e rilascio
 

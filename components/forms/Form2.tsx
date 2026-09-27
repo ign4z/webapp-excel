@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { form2Schema } from '@/lib/schema';
 import { toast } from '@/hooks/use-toast';
 import { Step2View, Step2FormValues } from '@/components/valuation/Step2View';
+import { Spinner, tokens } from '@/components/valuation/shared';
 
 
 export default function Form2Component() {
@@ -103,7 +104,7 @@ export default function Form2Component() {
   if (!form1Data) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#6B7280', fontFamily: 'Outfit, sans-serif' }}>Caricamento…</p>
+        <Spinner size="1.75rem" color={tokens.gold} />
       </div>
     );
   }
