@@ -269,6 +269,7 @@ I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in 
 
 1. **Moltiplicatori nascosti agli utenti**: la pagina finale dello Step 2 non deve mostrare i coefficienti applicati, solo il valore stimato.
 2. **Excel solo all'admin**: il report Excel non va allegato all'email del cliente, ma inviato solo all'admin (`ADMIN_EMAIL`).
+3. **Toast mai mostrati (bug)**: `Form1`/`Form2` chiamano `toast()` (`hooks/use-toast.ts`) ma nessun componente `Toaster` è montato, quindi l'utente non vede né gli errori (reCAPTCHA mancante, rate limit, errori server) né le conferme. Serve un `Toaster` nel layout.
 
 ## Versioni e rilascio
 
