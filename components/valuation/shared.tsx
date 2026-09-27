@@ -138,13 +138,13 @@ export function PageShell({ children }: PageShellProps) {
         .page-inner {
           max-width: 640px;
           margin: 0 auto;
-          animation: fadeUp 0.6s ease both;
+          animation: fadeUp 0.6s ease backwards;
         }
 
         .page-inner-wide {
           max-width: 780px;
           margin: 0 auto;
-          animation: fadeUp 0.6s ease both;
+          animation: fadeUp 0.6s ease backwards;
         }
 
         @media (max-width: 480px) {
@@ -154,6 +154,8 @@ export function PageShell({ children }: PageShellProps) {
           .recaptcha-wrap > div { transform: scale(0.85); transform-origin: center top; margin-bottom: -12px; }
         }
 
+        /* fill "backwards", non "both": un transform che resta applicato a fine animazione
+           fa da riferimento al position:fixed del campo via a tutta pagina, spostandolo fuori schermo */
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: none; }
