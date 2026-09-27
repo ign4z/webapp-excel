@@ -77,7 +77,7 @@ Gli store creati di recente non hanno un token di scrittura: `@vercel/blob` (≥
    vercel env pull .env.development.local --environment=development --yes
    ```
 
-   `VERCEL_OIDC_TOKEN` scade dopo circa 12 ore: se le chiamate Blob falliscono con un errore di autenticazione, rilancia il comando. In `.env.local` non deve esserci il `BLOB_READ_WRITE_TOKEN` di produzione
+   `VERCEL_OIDC_TOKEN` dura circa 12 ore, ma quando scade `@vercel/blob` ne chiede uno nuovo da solo usando il progetto collegato (`.vercel/project.json`) e il login della Vercel CLI: basta restare loggati (`vercel login`). In `.env.local` non deve esserci il `BLOB_READ_WRITE_TOKEN` di produzione
 4. In `.env.local` imposta `BLOB_PRODUCTION_STORE_ID` con l'id dello store di produzione (`store_…`). Se per errore le credenziali locali tornano quelle di produzione, ogni scrittura o cancellazione su Blob fallisce con un errore esplicito
 5. Opzionale, per partire con i dati reali: copia config e prezzi strade dalla produzione (sola lettura sulla produzione, i report non vengono copiati)
 
