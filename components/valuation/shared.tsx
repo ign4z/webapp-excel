@@ -34,7 +34,7 @@ export function Stepper({ current }: StepperProps) {
           justify-content: center;
           gap: 0;
           margin-bottom: 2.5rem;
-          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-family: 'Newsreader', Georgia, serif;
         }
         .step-item {
           display: flex;
@@ -126,6 +126,7 @@ export function PageShell({ children }: PageShellProps) {
 
         .page-shell {
           min-height: 100vh;
+          min-height: 100dvh;
           background-color: ${tokens.paper};
           background-image:
             radial-gradient(ellipse 80% 60% at 50% -10%, ${tokens.gold}12 0%, transparent 70%),
@@ -146,9 +147,16 @@ export function PageShell({ children }: PageShellProps) {
           animation: fadeUp 0.6s ease both;
         }
 
+        @media (max-width: 480px) {
+          .page-shell { padding: 1.75rem 1rem 3rem; }
+        }
+        @media (max-width: 360px) {
+          .recaptcha-wrap > div { transform: scale(0.85); transform-origin: center top; margin-bottom: -12px; }
+        }
+
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(18px); }
-          to   { opacity: 1; transform: translateY(0); }
+          to   { opacity: 1; transform: none; }
         }
       `}</style>
       {children}
@@ -236,7 +244,7 @@ export function FieldGroup({ children, label, error }: { children: ReactNode; la
         }
         .vl-label {
           font-family: 'JetBrains Mono', ui-monospace, monospace;
-          font-size: 0.65rem;
+          font-size: 0.72rem;
           letter-spacing: 0.15em;
           text-transform: uppercase;
           color: ${tokens.inkSoft};
@@ -254,7 +262,7 @@ export function FieldGroup({ children, label, error }: { children: ReactNode; la
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
           font-family: 'Hanken Grotesk', system-ui, sans-serif;
-          font-size: 0.95rem;
+          font-size: 1rem; /* sotto 16px iOS fa zoom al focus */
           color: ${tokens.ink};
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -419,6 +427,9 @@ export function VLCard({ children, accent }: { children: ReactNode; accent?: boo
           box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
           margin-bottom: 1.5rem;
         }
+        @media (max-width: 480px) {
+          .vl-card { padding: 1.25rem; border-radius: 12px; margin-bottom: 1rem; }
+        }
         .vl-card-accent {
           border-left: 3px solid ${tokens.gold};
           border-top: 1px solid rgba(196,30,58,0.3);
@@ -451,6 +462,8 @@ export function CheckboxRow({
           align-items: center;
           gap: 0.75rem;
           cursor: pointer;
+          min-height: 2.75rem;
+          box-sizing: border-box;
           padding: 0.6rem 0.9rem;
           border-radius: 6px;
           border: 1px solid ${tokens.border};
@@ -463,8 +476,8 @@ export function CheckboxRow({
           background: #2e2e2e;
         }
         .vl-checkbox-row input[type="checkbox"] {
-          width: 1rem;
-          height: 1rem;
+          width: 1.15rem;
+          height: 1.15rem;
           accent-color: ${tokens.gold};
           cursor: pointer;
           flex-shrink: 0;

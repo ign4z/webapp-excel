@@ -103,7 +103,7 @@ export default function Form2Component() {
 
   if (!form1Data) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Spinner size="1.75rem" color={tokens.gold} />
       </div>
     );

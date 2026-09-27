@@ -105,11 +105,11 @@ export function Step2View({
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 0.75rem 1.5rem;
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Hanken Grotesk', system-ui, sans-serif;
         }
         .summary-item-label {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.62rem;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-size: 0.7rem;
           letter-spacing: 0.15em;
           text-transform: uppercase;
           color: ${tokens.muted};
@@ -130,14 +130,14 @@ export function Step2View({
           gap: 1rem;
         }
         .estimate-label {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.65rem;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-size: 0.7rem;
           letter-spacing: 0.15em;
           text-transform: uppercase;
           color: ${tokens.muted};
         }
         .estimate-value {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: 'Newsreader', Georgia, serif;
           font-size: 2rem;
           font-weight: 500;
           color: ${tokens.goldDark};
@@ -150,7 +150,7 @@ export function Step2View({
         }
         .form-fields { display: flex; flex-direction: column; gap: 1rem; }
         .section-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: 'Newsreader', Georgia, serif;
           font-size: 1rem;
           font-weight: 500;
           color: ${tokens.inkSoft};
@@ -160,8 +160,8 @@ export function Step2View({
           border-bottom: 1px solid ${tokens.border};
         }
         .optional-tag {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.6rem;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-size: 0.7rem;
           letter-spacing: 0.1em;
           color: ${tokens.muted};
           margin-left: 0.5rem;
@@ -173,8 +173,8 @@ export function Step2View({
           border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
-          font-family: 'Outfit', sans-serif;
-          font-size: 0.95rem;
+          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-size: 1rem;
           color: ${tokens.ink};
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -195,6 +195,10 @@ export function Step2View({
         }
         .btn-row > :first-child { flex-shrink: 0; }
         .btn-row > :last-child { flex: 1; }
+        @media (max-width: 480px) {
+          .btn-row { flex-direction: column-reverse; align-items: stretch; }
+          .btn-row > .vl-btn-ghost { justify-content: center; }
+        }
         .recaptcha-wrap { display: flex; justify-content: center; }
       `}</style>
 
@@ -429,7 +433,7 @@ function ResultScreen({
           font-size: 1.6rem;
         }
         .result-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: 'Newsreader', Georgia, serif;
           font-size: clamp(1.8rem, 4vw, 2.4rem);
           font-weight: 300;
           color: ${tokens.ink};
@@ -448,6 +452,9 @@ function ResultScreen({
           padding: 2rem;
           margin-bottom: 1.5rem;
           position: relative;
+        }
+        @media (max-width: 480px) {
+          .value-card { padding: 1.5rem 1.25rem; }
           overflow: hidden;
         }
         .value-card::before {
@@ -461,16 +468,16 @@ function ResultScreen({
           pointer-events: none;
         }
         .value-base-label {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.6rem;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-size: 0.7rem;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: ${tokens.muted};
+          color: rgba(255,255,255,0.7);
           margin-bottom: 0.25rem;
         }
         .value-base {
           font-size: 1rem;
-          color: ${tokens.muted};
+          color: rgba(255,255,255,0.7);
           text-decoration: line-through;
           margin-bottom: 1.25rem;
         }
@@ -486,18 +493,18 @@ function ResultScreen({
           border-bottom: 1px solid rgba(255,255,255,0.2);
           font-size: 0.82rem;
           color: rgba(255,255,255,0.75);
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Hanken Grotesk', system-ui, sans-serif;
         }
         .value-final-label {
-          font-family: 'DM Mono', monospace;
-          font-size: 0.62rem;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-size: 0.7rem;
           letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: ${tokens.gold};
+          color: rgba(255,255,255,0.85);
           margin-bottom: 0.4rem;
         }
         .value-final {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: 'Newsreader', Georgia, serif;
           font-size: clamp(2.2rem, 6vw, 3rem);
           font-weight: 500;
           color: white;
@@ -507,7 +514,7 @@ function ResultScreen({
           font-size: 0.7rem;
           color: ${adj >= 0 ? '#6EE7B7' : '#FCA5A5'};
           margin-top: 0.25rem;
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           letter-spacing: 0.05em;
         }
         .new-val-btn {
@@ -519,7 +526,7 @@ function ResultScreen({
           color: ${tokens.muted};
           border: 1px solid ${tokens.border};
           border-radius: 6px;
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           font-size: 0.68rem;
           letter-spacing: 0.1em;
           text-transform: uppercase;

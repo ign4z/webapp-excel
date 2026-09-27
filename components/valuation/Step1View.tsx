@@ -84,8 +84,8 @@ export function Step1View({
           border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
-          font-family: 'Outfit', sans-serif;
-          font-size: 0.95rem;
+          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-size: 1rem;
           color: ${tokens.ink};
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -100,7 +100,7 @@ export function Step1View({
           box-shadow: 0 0 0 3px ${tokens.gold}22;
         }
         .section-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: 'Newsreader', Georgia, serif;
           font-size: 1rem;
           font-weight: 500;
           color: ${tokens.inkSoft};
@@ -115,10 +115,11 @@ export function Step1View({
           font-size: 0.75rem;
           color: ${tokens.muted};
           margin-top: 0.25rem;
-          font-family: 'DM Mono', monospace;
+          font-family: 'JetBrains Mono', ui-monospace, monospace;
           letter-spacing: 0.05em;
         }
         .street-row { display: grid; grid-template-columns: 1fr 7rem; gap: 0.75rem; align-items: start; }
+        @media (max-width: 480px) { .street-row { grid-template-columns: 1fr 5.5rem; gap: 0.5rem; } }
         .address-summary {
           display: flex; gap: 0.5rem; align-items: baseline;
           padding: 0.65rem 0.85rem; border-radius: 6px;
