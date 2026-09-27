@@ -3,6 +3,25 @@
 Tutte le modifiche rilevanti del progetto sono documentate in questo file.
 Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni secondo [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.9.2] — 2026-09-27
+
+### Aggiunto
+- Store Vercel Blob di sviluppo separato dalla produzione: Development e Preview usano `webapp-excel-dev` via OIDC (`BLOB_STORE_ID` + `VERCEL_OIDC_TOKEN`, rinnovato in automatico in locale con il login della Vercel CLI), Production resta su `BLOB_READ_WRITE_TOKEN`.
+- Guardia `assertBlobWritable()` (`lib/blob-env.ts`): con `BLOB_PRODUCTION_STORE_ID` in `.env.local`, fuori dalla produzione ogni scrittura o cancellazione sullo store di produzione viene rifiutata.
+- Script `scripts/copy-blob-to-dev.mjs`: copia config e prezzi strade dalla produzione allo store di sviluppo (sola lettura sulla produzione, report esclusi).
+- Pannello admin: layout comune (`AdminPage`) con navigazione tra Report, Configurazione e Prezzi per via, pagina attiva evidenziata e blocco "Accesso negato" unico.
+
+### Modificato
+- Passaggio da Step 1 a Step 2 immediato (rimossa l'attesa di 2,5 s), pagina Step 2 precaricata e spinner nei pulsanti di invio; il pulsante resta bloccato fino al cambio pagina.
+- Versione mobile curata: campo via dello Step 1 a tutta pagina sugli schermi stretti, input a 16px (niente zoom su iOS), spaziature ridotte, pulsanti dello Step 2 impilati, reCAPTCHA scalato, etichette più leggibili.
+- Pannello admin con componenti shadcn e token del tema, icone al posto delle emoji, barra Salva fissa, tabelle leggibili su mobile.
+- `@vercel/blob` aggiornato da 2.3.0 a 2.8.0 (supporto OIDC).
+- Layout: `lang="it"`, viewport con `themeColor`, titolo e descrizione reali.
+
+### Corretto
+- Schermata del risultato: le etichette del valore finale erano invisibili (rosso su rosso).
+- Font mai caricati (Outfit, Cormorant Garamond, DM Mono) sostituiti con quelli importati.
+
 ## [0.9.1] — 2026-09-26
 
 ### Aggiunto
