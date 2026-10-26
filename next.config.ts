@@ -8,16 +8,23 @@ const isDev = process.env.NODE_ENV !== "production";
 // In sviluppo servono anche 'unsafe-eval' (React Refresh) e il websocket dell'HMR.
 const TURNSTILE = "https://challenges.cloudflare.com";
 
-function csp(extra: { script?: string[]; style?: string[]; img?: string[]; font?: string[]; connect?: string[]; frame?: string[]; worker?: string[] } = {}) {
+// Solo nei deploy di Preview Vercel inietta la toolbar dei commenti (vercel.live): in produzione resta bloccata
+const isPreview = process.env.VERCEL_ENV === "preview";
+const VERCEL_LIVE = "https://vercel.live";
+const preview = (...sources: string[]) => (isPreview ? sources : []);
+
+type CspExtra = { script?: string[]; style?: string[]; img?: string[]; font?: string[]; connect?: string[]; frame?: string[]; worker?: string[] };
+
+function csp(extra: CspExtra = {}) {
   const join = (base: string[], more: string[] = []) => [...base, ...more].join(" ");
   return [
     "default-src 'self'",
-    `script-src ${join(["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : []), TURNSTILE], extra.script)}`,
-    `style-src ${join(["'self'", "'unsafe-inline'"], extra.style)}`,
-    `img-src ${join(["'self'", "data:", "blob:"], extra.img)}`,
-    `font-src ${join(["'self'", "data:"], extra.font)}`,
-    `connect-src ${join(["'self'", ...(isDev ? ["ws:"] : [])], extra.connect)}`,
-    `frame-src ${join([TURNSTILE], extra.frame)}`,
+    `script-src ${join(["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : []), TURNSTILE, ...preview(VERCEL_LIVE)], extra.script)}`,
+    `style-src ${join(["'self'", "'unsafe-inline'", ...preview(VERCEL_LIVE)], extra.style)}`,
+    `img-src ${join(["'self'", "data:", "blob:", ...preview(VERCEL_LIVE, "https://vercel.com")], extra.img)}`,
+    `font-src ${join(["'self'", "data:", ...preview(VERCEL_LIVE, "https://assets.vercel.com")], extra.font)}`,
+    `connect-src ${join(["'self'", ...(isDev ? ["ws:"] : []), ...preview(VERCEL_LIVE, "wss://ws-us3.pusher.com")], extra.connect)}`,
+    `frame-src ${join([TURNSTILE, ...preview(VERCEL_LIVE)], extra.frame)}`,
     ...(extra.worker ? [`worker-src ${join(["'self'"], extra.worker)}`] : []),
     "object-src 'none'",
     "base-uri 'self'",

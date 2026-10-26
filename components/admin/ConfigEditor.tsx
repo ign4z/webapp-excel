@@ -1,17 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { z } from 'zod';
 import { ConfigEditorView } from './ConfigEditorView';
 import rawDefaults from '@/lib/config.defaults.json';
 import type { ValuationConfig } from '@/lib/config';
 import { adminFetch } from '@/components/admin/adminFetch';
-
-const configSchema = z.object({
-  pricePerSqmByCity: z.record(z.string(), z.number().min(100).max(20000)),
-  pricePerSqmDefault: z.number().min(100).max(20000),
-  coefficienti: z.record(z.string(), z.record(z.string(), z.number().min(0.01).max(5))).optional(),
-});
+import { configSchema } from '@/lib/schema';
 
 type ConfigType = ValuationConfig;
 
@@ -47,8 +41,12 @@ export default function ConfigEditor({ token }: ConfigEditorProps) {
   };
 
   const handleSave = async () => {
+    const parsed = configSchema.safeParse(config);
+    if (!parsed.success) {
+      setMessage('❌ Valori non validi: ' + parsed.error.issues.map(e => e.message).join(', '));
+      return;
+    }
     try {
-      configSchema.parse(config);
       setSaving(true);
       setMessage('');
 
@@ -65,12 +63,8 @@ export default function ConfigEditor({ token }: ConfigEditorProps) {
         const data = await response.json();
         setMessage(`❌ ${data.error ?? 'Errore nel salvataggio'}`);
       }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        setMessage('❌ Valori non validi: ' + error.issues.map(e => e.message).join(', '));
-      } else {
-        setMessage('❌ Errore del server');
-      }
+    } catch {
+      setMessage('❌ Errore del server');
     } finally {
       setSaving(false);
     }

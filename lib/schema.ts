@@ -4,6 +4,11 @@
 
 import { z } from 'zod';
 
+// Niente compilazione JIT degli schemi: zod la proverebbe con new Function(), che la CSP blocca
+// (errore in console). Deve girare prima di creare qualsiasi z.object: per questo tutti gli
+// schemi usati nel browser stanno in questo file.
+z.config({ jitless: true });
+
 // ─── Valori ammessi ──────────────────────────────────────────────────────────
 
 export const TIPOLOGIA = ['appartamento', 'openspaceLoft', 'mansarda', 'attico', 'villettaSchiera', 'villa', 'rusticoCasale', 'stabilePalazzo'] as const;
@@ -67,3 +72,12 @@ export const settingsSchema = z.object({
 });
 
 export type AppSettings = z.infer<typeof settingsSchema>;
+
+// ─── Configurazione admin (/admin/config) ────────────────────────────────────
+
+/** Controllo lato client prima del salvataggio; la validazione completa la rifà /api/admin/config. */
+export const configSchema = z.object({
+  pricePerSqmByCity: z.record(z.string(), z.number().min(100).max(20000)),
+  pricePerSqmDefault: z.number().min(100).max(20000),
+  coefficienti: z.record(z.string(), z.record(z.string(), z.number().min(0.01).max(5))).optional(),
+});
