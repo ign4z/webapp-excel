@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { FileTableView, ExcelFile } from './FileTableView';
 import { adminFetch } from '@/components/admin/adminFetch';
 
@@ -13,6 +12,7 @@ export default function FileTable({ token }: FileTableProps) {
   const [files, setFiles] = useState<ExcelFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
 
   async function loadFiles() {
     setIsLoading(true);
@@ -25,7 +25,7 @@ export default function FileTable({ token }: FileTableProps) {
         throw new Error(data.error);
       }
     } catch (error: unknown) {
-      toast({ title: 'Errore', description: error instanceof Error ? error.message : 'Errore sconosciuto', variant: 'destructive' });
+      setMessage(`❌ ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +49,7 @@ export default function FileTable({ token }: FileTableProps) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (error: unknown) {
-      toast({ title: 'Errore', description: error instanceof Error ? error.message : 'Errore sconosciuto', variant: 'destructive' });
+      setMessage(`❌ ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
     }
   }
 
@@ -58,6 +58,7 @@ export default function FileTable({ token }: FileTableProps) {
     if (!confirm(`Sei sicuro di voler eliminare il file "${filename}"?`)) return;
 
     setDeletingFile(fileUrl);
+    setMessage('');
     try {
       const response = await adminFetch(token, `/api/admin/files?${fileQuery(file)}`,
         { method: 'DELETE' }
@@ -65,10 +66,11 @@ export default function FileTable({ token }: FileTableProps) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Errore eliminazione file');
 
-      toast({ title: '✅ File Eliminato', description: `${filename} è stato eliminato con successo` });
+      setMessage(`✅ ${filename.split('/').pop()} eliminato`);
+      setTimeout(() => setMessage(''), 3000);
       loadFiles();
     } catch (error: unknown) {
-      toast({ title: 'Errore', description: error instanceof Error ? error.message : 'Errore sconosciuto', variant: 'destructive' });
+      setMessage(`❌ ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
     } finally {
       setDeletingFile(null);
     }
@@ -78,6 +80,7 @@ export default function FileTable({ token }: FileTableProps) {
     <FileTableView
       files={files}
       loading={isLoading}
+      message={message}
       deletingUrl={deletingFile}
       onDelete={handleDelete}
       onDownload={handleDownload}

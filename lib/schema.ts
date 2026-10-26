@@ -53,3 +53,17 @@ export const form2Schema = z.object({
 });
 
 export type Form2Values = z.infer<typeof form2Schema>;
+
+// ─── Impostazioni admin ──────────────────────────────────────────────────────
+
+/** Impostazioni modificabili dal pannello (/admin/settings), salvate da lib/settings.ts */
+export const MAX_NOTIFICATION_EMAILS = 5;
+
+export const settingsSchema = z.object({
+  notificationEmails: z
+    .array(z.string().trim().toLowerCase().email('Indirizzo email non valido').max(254))
+    .max(MAX_NOTIFICATION_EMAILS, `Al massimo ${MAX_NOTIFICATION_EMAILS} indirizzi`)
+    .refine((list) => new Set(list).size === list.length, 'Indirizzi duplicati'),
+});
+
+export type AppSettings = z.infer<typeof settingsSchema>;

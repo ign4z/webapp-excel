@@ -19,14 +19,15 @@ npm run build
 ```
 
 Prima di considerare finito un lavoro: `npm run lint && npm run typecheck && npm test`.
-Un hook PostToolUse (`.claude/settings.json` → `scripts/hooks/lint-edited.mjs`) lancia ESLint su ogni file modificato: gli errori bloccano e vanno corretti subito.
+Hook in `.claude/settings.json` (script in `scripts/hooks/`): dopo ogni modifica `lint-edited.mjs` lancia ESLint sul file e `test-related.mjs` i test Vitest collegati (solo `lib/`, `app/api/`, `proxy.ts`, `tests/`): errori e test rossi bloccano e vanno corretti subito. `protect-files.mjs` blocca le modifiche a `.env*` (tranne `.env.example`) e `package-lock.json`.
+Skill: `/add-coefficient`, `/add-comune`, `/release`. Subagent `security-reviewer` per modifiche ad API, proxy, email, Blob e token.
 Variabili d'ambiente: vedi `.env.example` / README. In locale Blob usa lo **store di sviluppo** via OIDC (`BLOB_STORE_ID` + `VERCEL_OIDC_TOKEN` in `.env.development.local`, da `vercel env pull`): mai il token di produzione in locale. Le scritture passano da `assertBlobWritable()` (`lib/blob-env.ts`).
 
 ## Flusso Step 1 → Step 2
 
-1. `components/forms/Form1.tsx` → `POST /api/form-1`: rate limit per IP (`lib/rate-limit.ts`, Upstash o in memoria), reCAPTCHA (`lib/recaptcha.ts`), whitelist comuni, prezzo €/mq da `getPriceForStreet`, email preliminare in `after()`. Risponde con `form1Data`, `result` e un `sessionToken` HMAC.
+1. `components/forms/Form1.tsx` → `POST /api/form-1`: rate limit per IP (`lib/rate-limit.ts`, Upstash o in memoria), Turnstile (`lib/captcha.ts`), whitelist comuni, prezzo €/mq da `getPriceForStreet`, email preliminare in `after()`. Risponde con `form1Data`, `result` e un `sessionToken` HMAC.
 2. Il client salva i tre valori in `sessionStorage` e naviga su `/step-2`.
-3. `Form2.tsx` → `POST /api/form-2` con `form1Data` + `sessionToken`: il server verifica il token, ricalcola il prezzo, applica `computeValuation`, genera l'Excel, lo salva e lo invia via email (cliente + `ADMIN_EMAIL`).
+3. `Form2.tsx` → `POST /api/form-2` con `form1Data` + `sessionToken`: il server verifica il token, ricalcola il prezzo, applica `computeValuation`, genera l'Excel e lo salva su Blob (solo pannello admin, mai in allegato). Email al cliente con il solo valore finale e notifica ai destinatari di `getNotificationEmails()` (`lib/settings.ts`: `/admin/settings`, fallback `ADMIN_EMAIL`). La risposta contiene solo `finalValue`: base e coefficienti non escono mai verso il client.
 
 Lookup prezzo €/mq: chiave civico (`via roma:15`) → chiave via (`via roma`) → default comune → fallback globale.
 Il coefficiente piano ha due tabelle (con/senza ascensore): per questo l'admin mostra 14 tabelle per 13 coefficienti.
@@ -48,6 +49,14 @@ Il coefficiente piano ha due tabelle (con/senza ascensore): per questo l'admin m
 - Dati utente interpolati in HTML email: sempre `esc()`.
 - Lo store Vercel Blob è **privato**: mai `access: 'public'`, mai `fetch(blob.url)`. JSON (config, strade) con `readBlobJson()`/`writeBlobJson()` (`lib/blob-json-cache.ts`, cache invalidata da `uploadedAt` tra istanze); report Excel con `saveReport()`/`readReport()` (`lib/reports-storage.ts`), nomi file con UUID.
 - Lavoro dopo la risposta (email): `after()` di `next/server`, non promise non attese.
+- Unica eccezione a `requireAdmin`: `app/api/cron/*` (Cron Vercel in `vercel.json`) si autentica con `Authorization: Bearer ${CRON_SECRET}`, fail-closed.
+
+## Privacy
+
+- Titolare, conservazione (`RETENTION_MONTHS`) e fornitori sono in `lib/legal.ts`, usati da `/privacy`, `/cookie`, footer (`PageShell`) ed email. Nuovo fornitore che tratta dati utente → aggiungerlo a `RESPONSABILI`.
+- Niente cookie non tecnici né richieste a terzi dalle pagine pubbliche (per questo non c'è banner): font con `next/font`, anti-bot con Turnstile. Analytics o pixel richiederebbero banner e consenso.
+- Mai dati personali (email, nome, telefono) nei log.
+- Header di sicurezza e CSP in `next.config.ts`: nuovo dominio esterno (script, iframe, fetch) → aggiungerlo lì, solo dove serve (pubblico vs `/admin`).
 
 ## Convenzioni
 

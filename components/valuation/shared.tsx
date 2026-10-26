@@ -2,6 +2,9 @@
 
 import { ReactNode } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { TITOLARE } from '@/lib/legal';
 
 /* ─── DESIGN TOKENS ─── */
 export const tokens = {
@@ -34,7 +37,7 @@ export function Stepper({ current }: StepperProps) {
           justify-content: center;
           gap: 0;
           margin-bottom: 2.5rem;
-          font-family: 'Newsreader', Georgia, serif;
+          font-family: var(--font-newsreader), Georgia, serif;
         }
         .step-item {
           display: flex;
@@ -122,8 +125,6 @@ export function PageShell({ children }: PageShellProps) {
   return (
     <div className="page-shell">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600&family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap');
-
         .page-shell {
           min-height: 100vh;
           min-height: 100dvh;
@@ -132,7 +133,7 @@ export function PageShell({ children }: PageShellProps) {
             radial-gradient(ellipse 80% 60% at 50% -10%, ${tokens.gold}12 0%, transparent 70%),
             url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C41E3A' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
           padding: 3rem 1.5rem 5rem;
-          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-family: var(--font-hanken), system-ui, sans-serif;
         }
 
         .page-inner {
@@ -150,9 +151,6 @@ export function PageShell({ children }: PageShellProps) {
         @media (max-width: 480px) {
           .page-shell { padding: 1.75rem 1rem 3rem; }
         }
-        @media (max-width: 360px) {
-          .recaptcha-wrap > div { transform: scale(0.85); transform-origin: center top; margin-bottom: -12px; }
-        }
 
         /* fill "backwards", non "both": un transform che resta applicato a fine animazione
            fa da riferimento al position:fixed del campo via a tutta pagina, spostandolo fuori schermo */
@@ -162,6 +160,109 @@ export function PageShell({ children }: PageShellProps) {
         }
       `}</style>
       {children}
+      <LegalFooter />
+    </div>
+  );
+}
+
+/* ─── FOOTER LEGALE ─── */
+// Titolare e P.IVA vanno indicati sul sito; i link portano a informativa e cookie policy.
+function LegalFooter() {
+  return (
+    <footer className="vl-legal-footer">
+      <style>{`
+        .vl-legal-footer {
+          max-width: 640px;
+          margin: 3rem auto 0;
+          padding-top: 1.25rem;
+          border-top: 1px solid ${tokens.border};
+          text-align: center;
+          font-size: 0.75rem;
+          line-height: 1.6;
+          color: ${tokens.muted};
+        }
+        .vl-legal-footer a { color: ${tokens.inkSoft}; text-decoration: underline; text-underline-offset: 2px; }
+        .vl-legal-footer a:hover { color: ${tokens.ink}; }
+        .vl-legal-footer .links { display: flex; justify-content: center; gap: 1.25rem; margin-top: 0.35rem; }
+      `}</style>
+      <p>{TITOLARE.ragioneSociale} · P.IVA {TITOLARE.partitaIva}</p>
+      <p className="links">
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/cookie">Cookie</Link>
+      </p>
+    </footer>
+  );
+}
+
+/* ─── AVVISO PRIVACY SUI FORM ─── */
+// Informativa al momento della raccolta (art. 13 GDPR). Non è un consenso: il ricontatto
+// rientra nella richiesta di valutazione (art. 6.1.b), quindi nessuna checkbox.
+export function PrivacyNotice() {
+  return (
+    <p className="vl-privacy-notice">
+      <style>{`
+        .vl-privacy-notice {
+          font-size: 0.78rem;
+          line-height: 1.55;
+          color: ${tokens.muted};
+          text-align: center;
+          margin: 0 0 1rem;
+        }
+        .vl-privacy-notice a { color: ${tokens.inkSoft}; text-decoration: underline; text-underline-offset: 2px; }
+      `}</style>
+      Inviando i dati riceverai la valutazione via email e potrai essere ricontattato da un nostro agente
+      per approfondirla. Leggi l&apos;<Link href="/privacy" target="_blank">informativa privacy</Link>.
+    </p>
+  );
+}
+
+/* ─── ERRORE DI INVIO ─── */
+// Errore mostrato sopra il pulsante di invio (rate limit, verifica anti-bot, errori server).
+export function FormAlert({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <p className="vl-form-alert" role="alert">
+      <style>{`
+        .vl-form-alert {
+          margin: 0 0 1rem;
+          padding: 0.75rem 1rem;
+          border: 1px solid ${tokens.error}55;
+          border-left: 3px solid ${tokens.error};
+          border-radius: 6px;
+          background: ${tokens.error}14;
+          color: ${tokens.error};
+          font-size: 0.88rem;
+          line-height: 1.5;
+        }
+      `}</style>
+      {message}
+    </p>
+  );
+}
+
+/** Testo per FormAlert: i messaggi delle nostre API (Error), non quelli tecnici di rete o JSON. */
+export function submitErrorMessage(error: unknown): string {
+  if (error instanceof TypeError || error instanceof SyntaxError || !(error instanceof Error) || !error.message) {
+    return 'Invio non riuscito. Controlla la connessione e riprova.';
+  }
+  return error.message;
+}
+
+/* ─── VERIFICA ANTI-BOT ─── */
+// Cloudflare Turnstile: nessun cookie di profilazione. Senza site key (sviluppo) non viene mostrato.
+export function CaptchaWidget({ onChange }: { onChange: (token: string | null) => void }) {
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  if (!siteKey) return null;
+  return (
+    <div className="vl-captcha">
+      <style>{`.vl-captcha { margin: 0.5rem 0 1.25rem; }`}</style>
+      <Turnstile
+        siteKey={siteKey}
+        options={{ theme: 'dark', language: 'it', size: 'flexible' }}
+        onSuccess={onChange}
+        onExpire={() => onChange(null)}
+        onError={() => onChange(null)}
+      />
     </div>
   );
 }
@@ -176,7 +277,7 @@ export function PageHeader({ subtitle }: { subtitle: string }) {
           margin-bottom: 2.5rem;
         }
         .page-header-vl .eyebrow {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.65rem;
           letter-spacing: 0.22em;
           text-transform: uppercase;
@@ -184,7 +285,7 @@ export function PageHeader({ subtitle }: { subtitle: string }) {
           margin-bottom: 0.6rem;
         }
         .page-header-vl h1 {
-          font-family: 'Newsreader', Georgia, serif;
+          font-family: var(--font-newsreader), Georgia, serif;
           font-size: clamp(2rem, 5vw, 2.8rem);
           font-weight: 300;
           color: ${tokens.ink};
@@ -245,7 +346,7 @@ export function FieldGroup({ children, label, error }: { children: ReactNode; la
           gap: 0.4rem;
         }
         .vl-label {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.72rem;
           letter-spacing: 0.15em;
           text-transform: uppercase;
@@ -263,7 +364,7 @@ export function FieldGroup({ children, label, error }: { children: ReactNode; la
           border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
-          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-family: var(--font-hanken), system-ui, sans-serif;
           font-size: 1rem; /* sotto 16px iOS fa zoom al focus */
           color: ${tokens.ink};
           outline: none;
@@ -315,7 +416,7 @@ export function PrimaryButton({
           color: #FFFFFF;
           border: none;
           border-radius: 6px;
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.75rem;
           letter-spacing: 0.12em;
           text-transform: uppercase;
@@ -395,7 +496,7 @@ export function GhostButton({
           color: ${tokens.muted};
           border: 1px solid ${tokens.border};
           border-radius: 6px;
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.7rem;
           letter-spacing: 0.1em;
           text-transform: uppercase;
@@ -488,10 +589,10 @@ export function CheckboxRow({
           font-size: 0.9rem;
           color: ${tokens.ink};
           flex: 1;
-          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-family: var(--font-hanken), system-ui, sans-serif;
         }
         .vl-checkbox-badge {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.65rem;
           letter-spacing: 0.08em;
           color: ${tokens.success};

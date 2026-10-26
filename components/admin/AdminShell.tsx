@@ -3,13 +3,14 @@
 import { Suspense, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { FileSpreadsheet, Home, LockKeyhole, MapPin, SlidersHorizontal } from 'lucide-react';
+import { FileSpreadsheet, Home, LockKeyhole, MapPin, Settings, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/admin/files', label: 'Report', short: 'Report', icon: FileSpreadsheet },
   { href: '/admin/config', label: 'Configurazione', short: 'Config', icon: SlidersHorizontal },
   { href: '/admin/streets', label: 'Prezzi per via', short: 'Vie', icon: MapPin },
+  { href: '/admin/settings', label: 'Impostazioni', short: 'Impost.', icon: Settings },
 ];
 
 interface AdminPageProps {

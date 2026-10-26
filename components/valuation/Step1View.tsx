@@ -1,7 +1,6 @@
 'use client';
 
 import { UseFormReturn, useWatch } from 'react-hook-form';
-import ReCAPTCHA from 'react-google-recaptcha';
 import {
   PageShell,
   PageHeader,
@@ -10,6 +9,9 @@ import {
   FieldGroup,
   PrimaryButton,
   Spinner,
+  CaptchaWidget,
+  PrivacyNotice,
+  FormAlert,
   tokens,
 } from './shared';
 import { ALLOWED_CITIES } from '@/lib/cities';
@@ -53,7 +55,9 @@ interface Step1ViewProps {
   address: AddressFieldProps;
   isLoading: boolean;
   onSubmit: (e: React.FormEvent) => void;
-  onRecaptchaChange: (token: string | null) => void;
+  onCaptchaChange: (token: string | null) => void;
+  /** Errore dell'ultimo invio, mostrato sopra il pulsante */
+  submitError: string | null;
 }
 
 export function Step1View({
@@ -61,7 +65,8 @@ export function Step1View({
   address,
   isLoading,
   onSubmit,
-  onRecaptchaChange,
+  onCaptchaChange,
+  submitError,
 }: Step1ViewProps) {
   const {
     register,
@@ -84,7 +89,7 @@ export function Step1View({
           border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
-          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-family: var(--font-hanken), system-ui, sans-serif;
           font-size: 1rem;
           color: ${tokens.ink};
           outline: none;
@@ -100,7 +105,7 @@ export function Step1View({
           box-shadow: 0 0 0 3px ${tokens.gold}22;
         }
         .section-title {
-          font-family: 'Newsreader', Georgia, serif;
+          font-family: var(--font-newsreader), Georgia, serif;
           font-size: 1rem;
           font-weight: 500;
           color: ${tokens.inkSoft};
@@ -110,12 +115,11 @@ export function Step1View({
           border-bottom: 1px solid ${tokens.border};
         }
         .form-fields { display: flex; flex-direction: column; gap: 1.1rem; }
-        .recaptcha-wrap { display: flex; justify-content: center; margin: 0.5rem 0; }
         .address-hint {
           font-size: 0.75rem;
           color: ${tokens.muted};
           margin-top: 0.25rem;
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           letter-spacing: 0.05em;
         }
         .street-row { display: grid; grid-template-columns: 1fr 7rem; gap: 0.75rem; align-items: start; }
@@ -310,15 +314,11 @@ export function Step1View({
             </div>
           </VLCard>
 
-          {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
-            <div className="recaptcha-wrap">
-              <ReCAPTCHA
-                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                onChange={onRecaptchaChange}
-                onExpired={() => onRecaptchaChange(null)}
-              />
-            </div>
-          )}
+          <CaptchaWidget onChange={onCaptchaChange} />
+
+          <PrivacyNotice />
+
+          <FormAlert message={submitError} />
 
           <PrimaryButton disabled={isLoading}>
             {isLoading ? <><Spinner /> Elaborazione…</> : 'Calcola valutazione →'}

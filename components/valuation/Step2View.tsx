@@ -1,7 +1,6 @@
 'use client';
 
 import { UseFormReturn } from 'react-hook-form';
-import ReCAPTCHA from 'react-google-recaptcha';
 import {
   PageShell,
   PageHeader,
@@ -11,6 +10,9 @@ import {
   PrimaryButton,
   GhostButton,
   Spinner,
+  CaptchaWidget,
+  PrivacyNotice,
+  FormAlert,
   tokens,
 } from '@/components/valuation/shared';
 import type {
@@ -60,11 +62,9 @@ interface CalcResult {
   estimatedValue: number;
 }
 
+/** Solo il valore finale: base e coefficienti restano lato server (report admin). */
 interface FinalResult {
-  baseValue: number;
   finalValue: number;
-  totalAdjustment?: number;
-  details?: Array<string | { label: string; coefficiente: number }>;
 }
 
 interface Step2ViewProps {
@@ -75,7 +75,9 @@ interface Step2ViewProps {
   finalResult: FinalResult | null;
   onSubmit: (e: React.FormEvent) => void;
   onBack: () => void;
-  onRecaptchaChange: (token: string | null) => void;
+  onCaptchaChange: (token: string | null) => void;
+  /** Errore dell'ultimo invio, mostrato sopra il pulsante */
+  submitError: string | null;
   onNewValuation: () => void;
 }
 
@@ -88,7 +90,8 @@ export function Step2View({
   finalResult,
   onSubmit,
   onBack,
-  onRecaptchaChange,
+  onCaptchaChange,
+  submitError,
   onNewValuation,
 }: Step2ViewProps) {
   const { register, formState: { errors } } = form;
@@ -105,10 +108,10 @@ export function Step2View({
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 0.75rem 1.5rem;
-          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-family: var(--font-hanken), system-ui, sans-serif;
         }
         .summary-item-label {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.7rem;
           letter-spacing: 0.15em;
           text-transform: uppercase;
@@ -130,14 +133,14 @@ export function Step2View({
           gap: 1rem;
         }
         .estimate-label {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.7rem;
           letter-spacing: 0.15em;
           text-transform: uppercase;
           color: ${tokens.muted};
         }
         .estimate-value {
-          font-family: 'Newsreader', Georgia, serif;
+          font-family: var(--font-newsreader), Georgia, serif;
           font-size: 2rem;
           font-weight: 500;
           color: ${tokens.goldDark};
@@ -150,7 +153,7 @@ export function Step2View({
         }
         .form-fields { display: flex; flex-direction: column; gap: 1rem; }
         .section-title {
-          font-family: 'Newsreader', Georgia, serif;
+          font-family: var(--font-newsreader), Georgia, serif;
           font-size: 1rem;
           font-weight: 500;
           color: ${tokens.inkSoft};
@@ -160,7 +163,7 @@ export function Step2View({
           border-bottom: 1px solid ${tokens.border};
         }
         .optional-tag {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.7rem;
           letter-spacing: 0.1em;
           color: ${tokens.muted};
@@ -173,7 +176,7 @@ export function Step2View({
           border: 1px solid ${tokens.border};
           border-radius: 6px;
           padding: 0.7rem 0.9rem;
-          font-family: 'Hanken Grotesk', system-ui, sans-serif;
+          font-family: var(--font-hanken), system-ui, sans-serif;
           font-size: 1rem;
           color: ${tokens.ink};
           outline: none;
@@ -199,7 +202,6 @@ export function Step2View({
           .btn-row { flex-direction: column-reverse; align-items: stretch; }
           .btn-row > .vl-btn-ghost { justify-content: center; }
         }
-        .recaptcha-wrap { display: flex; justify-content: center; }
       `}</style>
 
       <div className="page-inner-wide">
@@ -372,15 +374,11 @@ export function Step2View({
             </FieldGroup>
           </VLCard>
 
-          {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
-            <div className="recaptcha-wrap" style={{ marginBottom: '1.5rem' }}>
-              <ReCAPTCHA
-                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                onChange={onRecaptchaChange}
-                onExpired={() => onRecaptchaChange(null)}
-              />
-            </div>
-          )}
+          <CaptchaWidget onChange={onCaptchaChange} />
+
+          <PrivacyNotice />
+
+          <FormAlert message={submitError} />
 
           <div className="btn-row">
             <GhostButton onClick={onBack} disabled={isLoading}>
@@ -404,9 +402,6 @@ function ResultScreen({
   finalResult: FinalResult;
   onNewValuation: () => void;
 }) {
-  const adj = finalResult.totalAdjustment ?? 0;
-  const adjSign = adj >= 0 ? '+' : '';
-
   return (
     <PageShell>
       <style>{`
@@ -433,7 +428,7 @@ function ResultScreen({
           font-size: 1.6rem;
         }
         .result-title {
-          font-family: 'Newsreader', Georgia, serif;
+          font-family: var(--font-newsreader), Georgia, serif;
           font-size: clamp(1.8rem, 4vw, 2.4rem);
           font-weight: 300;
           color: ${tokens.ink};
@@ -467,36 +462,8 @@ function ResultScreen({
           background: radial-gradient(circle, ${tokens.gold}18 0%, transparent 70%);
           pointer-events: none;
         }
-        .value-base-label {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
-          font-size: 0.7rem;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.7);
-          margin-bottom: 0.25rem;
-        }
-        .value-base {
-          font-size: 1rem;
-          color: rgba(255,255,255,0.7);
-          text-decoration: line-through;
-          margin-bottom: 1.25rem;
-        }
-        .value-details {
-          text-align: left;
-          margin-bottom: 1.25rem;
-        }
-        .value-detail-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.3rem 0;
-          border-bottom: 1px solid rgba(255,255,255,0.2);
-          font-size: 0.82rem;
-          color: rgba(255,255,255,0.75);
-          font-family: 'Hanken Grotesk', system-ui, sans-serif;
-        }
         .value-final-label {
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.7rem;
           letter-spacing: 0.2em;
           text-transform: uppercase;
@@ -504,17 +471,14 @@ function ResultScreen({
           margin-bottom: 0.4rem;
         }
         .value-final {
-          font-family: 'Newsreader', Georgia, serif;
+          font-family: var(--font-newsreader), Georgia, serif;
           font-size: clamp(2.2rem, 6vw, 3rem);
           font-weight: 500;
           color: white;
           letter-spacing: -0.01em;
-        }
-        .value-adj {
-          font-size: 0.7rem;
-          color: ${adj >= 0 ? '#6EE7B7' : '#FCA5A5'};
+        };
           margin-top: 0.25rem;
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           letter-spacing: 0.05em;
         }
         .new-val-btn {
@@ -526,7 +490,7 @@ function ResultScreen({
           color: ${tokens.muted};
           border: 1px solid ${tokens.border};
           border-radius: 6px;
-          font-family: 'JetBrains Mono', ui-monospace, monospace;
+          font-family: var(--font-jetbrains), ui-monospace, monospace;
           font-size: 0.68rem;
           letter-spacing: 0.1em;
           text-transform: uppercase;
@@ -543,37 +507,12 @@ function ResultScreen({
           Valutazione<br /><em>completata</em>
         </h2>
         <p className="result-subtitle">
-          Ecco il riepilogo completo della tua valutazione.
+          Ti abbiamo inviato il riepilogo via email. Un nostro agente potrà contattarti per approfondirla.
         </p>
 
         <div className="value-card">
-          <p className="value-base-label">Valore base</p>
-          <p className="value-base">€{finalResult.baseValue.toLocaleString('it-IT')}</p>
-
-          {finalResult.details && finalResult.details.length > 0 && (
-            <div className="value-details">
-              {finalResult.details.map((d, i) => (
-                <div key={i} className="value-detail-row">
-                  {typeof d === 'string' ? (
-                    <span>{d}</span>
-                  ) : (
-                    <>
-                      <span>{d.label}</span>
-                      <span>×{d.coefficiente.toFixed(2)}</span>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
           <p className="value-final-label">Valore stimato</p>
           <p className="value-final">€{finalResult.finalValue.toLocaleString('it-IT')}</p>
-          {adj !== 0 && (
-            <p className="value-adj">
-              Aggiustamento: {adjSign}€{Math.abs(adj).toLocaleString('it-IT')}
-            </p>
-          )}
         </div>
 
         <div className="actions">

@@ -111,7 +111,7 @@ export function StreetCombobox({ streets, value, city, disabled, placeholder, in
         .street-option {
           display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem;
           padding: 0.65rem 0.75rem; border-radius: 6px; cursor: pointer;
-          font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 1rem; color: ${tokens.ink};
+          font-family: var(--font-hanken), system-ui, sans-serif; font-size: 1rem; color: ${tokens.ink};
         }
         .street-option[aria-selected="true"] { background: ${tokens.gold}26; }
         .street-option-city { font-size: 0.75rem; color: ${tokens.muted}; white-space: nowrap; }

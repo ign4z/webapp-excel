@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { form2Schema } from '@/lib/schema';
-import { toast } from '@/hooks/use-toast';
 import { Step2View, Step2FormValues } from '@/components/valuation/Step2View';
-import { Spinner, tokens } from '@/components/valuation/shared';
+import { Spinner, tokens, submitErrorMessage } from '@/components/valuation/shared';
 
 
 export default function Form2Component() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [form1Data, setForm1Data] = useState<unknown>(null);
   const [calculationResult, setCalculationResult] = useState<unknown>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -42,7 +42,7 @@ export default function Form2Component() {
     const storedToken = sessionStorage.getItem('sessionToken');
 
     if (!storedForm1 || !storedResult || !storedToken) {
-      toast({ title: 'Errore', description: 'Dati del primo form mancanti. Ricompila il form.', variant: 'destructive' });
+      // Step 2 aperto senza aver completato lo Step 1 (o sessione chiusa): si riparte dall'inizio
       router.push('/');
       return;
     }
@@ -59,21 +59,23 @@ export default function Form2Component() {
 
   /* ─── SUBMIT ─── */
   async function onSubmit(values: Step2FormValues) {
-    if (!recaptchaToken) {
-      toast({ title: 'Errore', description: 'Completa la verifica reCAPTCHA', variant: 'destructive' });
+    // Senza site key (sviluppo) il widget non c'è: decide il server, che in produzione rifiuta
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      setSubmitError('Completa la verifica anti-bot qui sopra.');
       return;
     }
     if (!form1Data || !calculationResult || !sessionToken) {
-      toast({ title: 'Errore', description: 'Dati della sessione mancanti', variant: 'destructive' });
+      setSubmitError('Sessione scaduta: torna indietro e ricompila il primo step.');
       return;
     }
 
+    setSubmitError(null);
     setIsLoading(true);
     try {
       const response = await fetch('/api/form-2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, sessionToken, form1Data, recaptchaToken }),
+        body: JSON.stringify({ ...values, sessionToken, form1Data, captchaToken: captchaToken ?? '' }),
       });
 
       const data = await response.json();
@@ -81,15 +83,12 @@ export default function Form2Component() {
 
       setFinalResult(data.finalValuation);
 
-      toast({ title: '✅ Valutazione Completata!', description: 'La tua valutazione è stata elaborata con successo.' });
-
       sessionStorage.removeItem('form1Data');
       sessionStorage.removeItem('form2Data');
       sessionStorage.removeItem('calculationResult');
       sessionStorage.removeItem('sessionToken');
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Errore sconosciuto';
-      toast({ title: 'Errore', description: message, variant: 'destructive' });
+      setSubmitError(submitErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +117,8 @@ export default function Form2Component() {
       finalResult={finalResult as Parameters<typeof Step2View>[0]['finalResult']}
       onSubmit={form.handleSubmit(onSubmit)}
       onBack={handleBack}
-      onRecaptchaChange={setRecaptchaToken}
+      onCaptchaChange={setCaptchaToken}
+      submitError={submitError}
       onNewValuation={() => router.push('/')}
     />
   );

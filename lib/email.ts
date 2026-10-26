@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
 import { createLogger } from '@/lib/logger';
+import { TITOLARE } from '@/lib/legal';
+import { getNotificationEmails } from '@/lib/settings';
 
 const log = createLogger('lib/email');
 
@@ -23,9 +25,20 @@ function esc(value: string | number): string {
     .replace(/'/g, '&#39;');
 }
 
-const eur = (n: number) => `€${n.toLocaleString('it-IT')}`;
+const baseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-type Attachment = { filename: string; content: Buffer };
+/** Riga legale in fondo alle email al cliente: titolare e link all'informativa. */
+function legalFooter(): string {
+  return `${esc(TITOLARE.ragioneSociale)} · P.IVA ${esc(TITOLARE.partitaIva)} · `
+    + `<a href="${baseUrl()}/privacy" style="color: #9CA3AF;">Informativa privacy</a>`;
+}
+
+/** Testo su una riga per oggetti e intestazioni: niente a-capo o caratteri di controllo dai dati utente. */
+function oneLine(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f\s]+/g, ' ').trim();
+}
+
+const eur = (n: number) => `€${n.toLocaleString('it-IT')}`;
 
 /**
  * Invia email dopo Form 1 con la stima preliminare. Richiede RESEND_API_KEY; se assente, restituisce errore senza eccezione.
@@ -37,7 +50,6 @@ export async function sendForm1Email(params: {
   city: string;
   address: string;
   squareMeters: number;
-  pricePerSqm: number;
   estimatedValue: number;
 }) {
   try {
@@ -46,9 +58,7 @@ export async function sendForm1Email(params: {
       return { success: false, error: 'Resend non configurato' };
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-
-    log.info('Sending Form1 email', { to: params.email });
+    log.info('Sending Form1 email');
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: params.email,
@@ -90,7 +100,6 @@ export async function sendForm1Email(params: {
                   <tr><td>Comune</td><td>${esc(params.city)}</td></tr>
                   <tr><td>Indirizzo</td><td>${esc(params.address)}</td></tr>
                   <tr><td>Superficie</td><td>${esc(params.squareMeters)} mq</td></tr>
-                  <tr><td>Prezzo al mq</td><td>€${params.pricePerSqm.toLocaleString('it-IT')}</td></tr>
                 </table>
                 <div style="border-top: 1px solid #EDE8DF; margin-top: 16px; padding-top: 16px;">
                   <p class="label">Stima base</p>
@@ -99,9 +108,9 @@ export async function sendForm1Email(params: {
               </div>
 
               <p>Questa è solo una stima preliminare. Per affinare il risultato con le caratteristiche specifiche dell'immobile, completa il secondo step:</p>
-              <a href="${baseUrl}/step-2" class="button">Affina la valutazione →</a>
+              <a href="${baseUrl()}/step-2" class="button">Affina la valutazione →</a>
 
-              <p class="footer">Questa email è stata inviata automaticamente. Non rispondere a questo messaggio.</p>
+              <p class="footer">Questa email è stata inviata automaticamente. Non rispondere a questo messaggio.<br>${legalFooter()}</p>
             </div>
           </div>
         </body>
@@ -124,7 +133,7 @@ export async function sendForm1Email(params: {
 }
 
 /**
- * Invia al cliente la valutazione definitiva (Step 2) con il report Excel allegato. Non lancia eccezioni.
+ * Invia al cliente la valutazione definitiva (Step 2). Il report Excel resta nel pannello admin. Non lancia eccezioni.
  */
 export async function sendForm2Email(params: {
   email: string;
@@ -133,18 +142,16 @@ export async function sendForm2Email(params: {
   address: string;
   squareMeters: number;
   finalValue: number;
-  attachment: Attachment;
 }) {
   try {
     const resend = getResendClient();
     if (!resend) return { success: false, error: 'Resend non configurato' };
 
-    log.info('Sending Form2 email', { to: params.email });
+    log.info('Sending Form2 email');
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: params.email,
       subject: 'La tua valutazione immobiliare definitiva',
-      attachments: [params.attachment],
       html: `
         <!DOCTYPE html>
         <html>
@@ -159,8 +166,8 @@ export async function sendForm2Email(params: {
               <p>${esc(params.address)} — ${esc(params.city)} — ${esc(params.squareMeters)} mq</p>
               <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px;">Valore stimato</p>
               <p style="font-size: 28px; font-weight: 700; color: #9A7535; margin: 0 0 20px;">${eur(params.finalValue)}</p>
-              <p>In allegato trovi il report Excel con il dettaglio di tutti i coefficienti applicati.</p>
-              <p style="font-size: 12px; color: #9CA3AF; margin-top: 28px;">Questa email è stata inviata automaticamente. Non rispondere a questo messaggio.</p>
+              <p>Il valore è una stima indicativa calcolata sulle caratteristiche che ci hai indicato. Un nostro agente potrà contattarti per approfondirla.</p>
+              <p style="font-size: 12px; color: #9CA3AF; margin-top: 28px;">Questa email è stata inviata automaticamente. Non rispondere a questo messaggio.<br>${legalFooter()}</p>
             </div>
           </div>
         </body>
@@ -182,8 +189,9 @@ export async function sendForm2Email(params: {
 }
 
 /**
- * Notifica l'admin di una nuova valutazione definitiva, con report allegato. Non lancia eccezioni.
- * Destinatario letto da ADMIN_EMAIL; se assente la notifica viene saltata.
+ * Notifica l'admin di una nuova valutazione definitiva. Non lancia eccezioni.
+ * Niente allegato: il report Excel resta su Blob (pannello admin, sezione Report) e viene cancellato
+ * con il resto dei dati alla scadenza della conservazione. Destinatari da getNotificationEmails().
  */
 export async function sendAdminNotification(params: {
   firstName: string;
@@ -194,13 +202,12 @@ export async function sendAdminNotification(params: {
   address: string;
   squareMeters: number;
   finalValue: number;
-  attachment: Attachment;
 }) {
   try {
     const resend = getResendClient();
-    const to = process.env.ADMIN_EMAIL;
-    if (!resend || !to) {
-      log.warn('Notifica admin saltata: Resend o ADMIN_EMAIL non configurati');
+    const to = await getNotificationEmails();
+    if (!resend || to.length === 0) {
+      log.warn('Notifica admin saltata: Resend o destinatari non configurati');
       return;
     }
 
@@ -209,8 +216,7 @@ export async function sendAdminNotification(params: {
       from: EMAIL_FROM,
       to,
       replyTo: params.email,
-      subject: `Nuova valutazione: ${params.firstName} ${params.lastName} — ${params.city}`,
-      attachments: [params.attachment],
+      subject: oneLine(`Nuova valutazione: ${params.firstName} ${params.lastName} — ${params.city}`),
       html: `
         <h2>Nuova valutazione definitiva</h2>
         <ul>
@@ -221,7 +227,7 @@ export async function sendAdminNotification(params: {
           <li><strong>Valore stimato:</strong> ${eur(params.finalValue)}</li>
           <li><strong>Data:</strong> ${new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}</li>
         </ul>
-        <p>Report Excel in allegato (disponibile anche nel pannello admin).</p>
+        <p>Il report Excel con il dettaglio dei coefficienti è nel pannello admin, sezione <strong>Report</strong>.</p>
       `,
     });
 

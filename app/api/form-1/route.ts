@@ -4,7 +4,7 @@ import { getPriceForStreet } from '@/lib/streets';
 import { sendForm1Email } from '@/lib/email';
 import { isAllowedCity, ALLOWED_CITIES } from '@/lib/cities';
 import { form1Schema } from '@/lib/schema';
-import { verifyRecaptcha } from '@/lib/recaptcha';
+import { verifyCaptcha } from '@/lib/captcha';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { createSessionToken } from '@/lib/session-token';
 import { createLogger } from '@/lib/logger';
@@ -12,7 +12,7 @@ import { createLogger } from '@/lib/logger';
 const log = createLogger('api/form-1');
 
 // Stesso schema del form client (lib/schema.ts): un attaccante che bypassa il client riceve comunque un 400 coerente
-const requestSchema = form1Schema.extend({ recaptchaToken: z.string() });
+const requestSchema = form1Schema.extend({ captchaToken: z.string().max(2048) });
 
 export async function POST(req: NextRequest) {
   // 10 richieste ogni 10 minuti per IP (contano anche i tentativi falliti)
@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { recaptchaToken, ...validated } = requestSchema.parse(body);
+    const { captchaToken, ...validated } = requestSchema.parse(body);
 
     log.info('Form1 POST received', { city: validated.city, sqm: validated.squareMeters });
 
-    if (!(await verifyRecaptcha(recaptchaToken))) {
-      log.warn('Form1 reCAPTCHA failed');
-      return NextResponse.json({ error: 'Verifica reCAPTCHA fallita' }, { status: 400 });
+    if (!(await verifyCaptcha(captchaToken))) {
+      log.warn('Form1 captcha failed');
+      return NextResponse.json({ error: 'Verifica anti-bot fallita' }, { status: 400 });
     }
 
     if (!isAllowedCity(validated.city)) {
@@ -49,9 +49,9 @@ export async function POST(req: NextRequest) {
 
     log.info('Form1 calculation', { pricePerSqm, estimatedValue });
 
+    // Il prezzo €/mq non esce dal server (né in risposta né in email): solo la stima
     const result = {
       city: validated.city,
-      pricePerSqm,
       estimatedValue,
       tipologia: validated.tipologia,
       piano: validated.piano,
@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
       city: validated.city,
       address: validated.address,
       squareMeters: validated.squareMeters,
-      pricePerSqm,
       estimatedValue,
     }));
 

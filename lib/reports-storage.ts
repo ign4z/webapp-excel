@@ -52,6 +52,20 @@ export async function deleteReport(url: string): Promise<void> {
   await del(url);
 }
 
+/**
+ * Cancella i report caricati prima di `cutoff` (conservazione dichiarata nell'informativa, lib/legal.ts).
+ * Restituisce quanti ne ha cancellati.
+ */
+export async function purgeReportsOlderThan(cutoff: Date): Promise<number> {
+  const old = (await listReports()).filter((r) => new Date(r.uploadedAt) < cutoff).map((r) => r.url);
+  if (old.length === 0) return 0;
+  assertBlobWritable('purge reports');
+  for (let i = 0; i < old.length; i += 100) {
+    await del(old.slice(i, i + 100));
+  }
+  return old.length;
+}
+
 /** Stream del contenuto di un report, o null se non trovato. */
 export async function readReport(url: string): Promise<ReadableStream<Uint8Array> | null> {
   const result = await get(url, { access: 'private' });

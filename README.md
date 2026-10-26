@@ -6,7 +6,7 @@ Applicazione web per la stima del valore di immobili residenziali nella zona sud
 
 ## Overview
 
-**Cosa fa:** Raccoglie i dati dell'immobile in due passaggi — Step 1 per la stima preliminare, Step 2 per la valutazione definitiva con tutte le caratteristiche — e invia email di conferma con report Excel allegato.
+**Cosa fa:** Raccoglie i dati dell'immobile in due passaggi — Step 1 per la stima preliminare, Step 2 per la valutazione definitiva con tutte le caratteristiche — e invia email di conferma al cliente (solo il valore stimato) e una notifica all'agenzia. Il report Excel con il dettaglio dei coefficienti resta nel pannello admin.
 
 **Stack tecnologico:**
 - **Next.js 16** (App Router) + TypeScript + React (React Compiler abilitato)
@@ -29,9 +29,10 @@ Applicazione web per la stima del valore di immobili residenziali nella zona sud
 | `ADMIN_PASSWORD` | Password HTTP Basic Auth pannello admin |
 | `RESEND_API_KEY` | API key Resend per invio email transazionali |
 | `NEXT_PUBLIC_BASE_URL` | URL pubblico dell'app (es. `https://tuodominio.com`) — usato nei link email |
-| `ADMIN_EMAIL` | Email destinatario notifiche admin (se assente la notifica viene saltata) |
-| `RECAPTCHA_SECRET_KEY` | Chiave segreta reCAPTCHA. **Obbligatoria in produzione**: senza, i form vengono rifiutati |
-| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | Site key reCAPTCHA per il widget nei form |
+| `ADMIN_EMAIL` | Destinatari di riserva della notifica di nuova valutazione (anche più indirizzi separati da virgola): usati solo se in `/admin/settings` non ne è configurato nessuno |
+| `TURNSTILE_SECRET_KEY` | Chiave segreta Cloudflare Turnstile. **Obbligatoria in produzione**: senza, i form vengono rifiutati |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Site key Turnstile per il widget nei form (in sviluppo si possono usare le chiavi di test, vedi `.env.example`) |
+| `CRON_SECRET` | Segreto del Cron Vercel che cancella i report oltre la conservazione dichiarata (`vercel.json`) |
 
 **Variabili opzionali:**
 
@@ -71,7 +72,7 @@ Gli store creati di recente non hanno un token di scrittura: `@vercel/blob` (≥
 
 1. Su Vercel → **Storage** → **Create** → **Blob**, accesso **Private** (es. `webapp-excel-dev`), collegato al progetto per **Development** e **Preview**
 2. Imposta le variabili come nella tabella (lo store di produzione non deve dare `BLOB_READ_WRITE_TOKEN` né `BLOB_STORE_ID` a Development/Preview)
-3. In locale le variabili Vercel vanno in `.env.development.local`, così `.env.local` (chiavi admin, reCAPTCHA di test…) non viene sovrascritto:
+3. In locale le variabili Vercel vanno in `.env.development.local`, così `.env.local` (chiavi admin, Turnstile di test…) non viene sovrascritto:
 
    ```bash
    vercel env pull .env.development.local --environment=development --yes
@@ -102,7 +103,8 @@ lib/              Model — logica di business
   email.ts          Invio email con Resend
   auth.ts           Autenticazione admin (token + Basic Auth)
   session-token.ts  Token firmato Step 1 → Step 2
-  recaptcha.ts      Verifica reCAPTCHA
+  captcha.ts        Verifica anti-bot Cloudflare Turnstile
+  legal.ts          Titolare, conservazione e fornitori (informativa privacy)
   blob-json-cache.ts Lettura JSON da Blob con cache per versione
   reports-storage.ts Salvataggio/lista/download report Excel
   rate-limit.ts     Rate limit per IP sui form pubblici
@@ -121,6 +123,7 @@ app/api/          API Routes — endpoint Next.js con validazione e autenticazio
   admin/config/     Configurazione admin
   admin/files/      Gestione file Blob
   admin/streets/    Prezzi strade (CRUD + import/export Excel)
+  admin/settings/   Impostazioni (destinatari notifiche)
 ```
 
 **Pattern di caching:** configurazione e prezzi strade passano da `lib/blob-json-cache.ts`: a ogni richiesta un `list()` leggero confronta `uploadedAt` del blob e il JSON viene riscaricato solo se è cambiato. Un salvataggio admin si propaga quindi a tutte le istanze serverless.
@@ -151,7 +154,8 @@ app/api/          API Routes — endpoint Next.js con validazione e autenticazio
    - **Cantina** (sì/no)
    - **Riscaldamento** (assente → impianto radiante)
 2. Il sistema applica la **formula moltiplicativa a coefficienti** (v3)
-3. Viene generato un report Excel con il dettaglio di ogni coefficiente applicato, inviato in allegato al cliente e all'admin (`ADMIN_EMAIL`)
+3. Viene generato un report Excel con il dettaglio di ogni coefficiente applicato, salvato su Blob e scaricabile solo dal pannello admin (sezione Report)
+4. Il cliente vede e riceve via email solo il valore stimato; i destinatari configurati in `/admin/settings` ricevono una notifica con i contatti del cliente (senza allegato)
 
 ## Formula di Valutazione
 
@@ -201,6 +205,7 @@ Le API `/api/admin/*` richiedono l'header `Authorization: Bearer <ADMIN_TOKEN>` 
 | `/admin/config?token=...` | Editor prezzi €/mq per comune + **14 tabelle coefficienti immobiliari** |
 | `/admin/files?token=...` | Lista file su Vercel Blob con possibilità di eliminazione |
 | `/admin/streets?token=...` | Editor prezzi per via e per civico, import/export Excel batch |
+| `/admin/settings?token=...` | Destinatari della notifica di nuova valutazione (max 5; vuoto = `ADMIN_EMAIL`) |
 
 La sezione **Coefficienti Immobiliari** in `/admin/config` espone 14 accordion collassabili, uno per ogni tabella coefficiente. Ogni riga mostra l'etichetta leggibile e un input numerico (step 0,01, range 0,01–5,00).
 
@@ -236,7 +241,7 @@ L'editor strade (`/admin/streets`) permette di:
 |---|---|---|---|
 | `GET` | `/api/streets` | Nessuna | Vie selezionabili nello Step 1 per un comune (`?city=Opera`): solo nomi e civici, mai prezzi |
 | `POST` | `/api/form-1` | Nessuna | Salva dati Step 1 (inclusi tipologia/piano/locali/bagni), calcola stima base, invia email preliminare |
-| `POST` | `/api/form-2` | `sessionToken` di Step 1 | Verifica il token, ricalcola il prezzo, applica la formula a coefficienti, genera Excel e invia le email |
+| `POST` | `/api/form-2` | `sessionToken` di Step 1 | Verifica il token, ricalcola il prezzo, applica la formula a coefficienti, salva l'Excel e invia le email; restituisce solo il valore finale |
 | `GET` | `/api/admin/config` | Bearer | Legge configurazione corrente da Vercel Blob |
 | `POST` | `/api/admin/config` | Bearer | Aggiorna configurazione su Vercel Blob |
 | `GET` | `/api/admin/files` | Bearer | Lista file presenti su Vercel Blob |
@@ -246,6 +251,9 @@ L'editor strade (`/admin/streets`) permette di:
 | `POST` | `/api/admin/streets` | Bearer | Aggiorna prezzi strade per una city (max 10000 chiavi) |
 | `GET` | `/api/admin/streets/template` | Bearer | Scarica template Excel prezzi strade (`?city=opera`) |
 | `POST` | `/api/admin/streets/import` | Bearer | Importa prezzi strade da file `.xlsx` (multipart, campo `file`) |
+| `GET` | `/api/admin/settings` | Bearer | Legge le impostazioni (destinatari notifiche) e i destinatari di riserva da `ADMIN_EMAIL` |
+| `POST` | `/api/admin/settings` | Bearer | Salva le impostazioni |
+| `GET` | `/api/cron/purge-reports` | `CRON_SECRET` | Cron Vercel giornaliero: cancella i report più vecchi della conservazione dichiarata |
 
 **Formato city:** slug lowercase con trattini (es. `locate-di-triulzi`, `pieve-emanuele`).
 
@@ -267,9 +275,7 @@ I prezzi sono configurabili dall'admin. La lista dei comuni è centralizzata in 
 
 ## TODO
 
-1. **Moltiplicatori nascosti agli utenti**: la pagina finale dello Step 2 non deve mostrare i coefficienti applicati, solo il valore stimato.
-2. **Excel solo all'admin**: il report Excel non va allegato all'email del cliente, ma inviato solo all'admin (`ADMIN_EMAIL`).
-3. **Toast mai mostrati (bug)**: `Form1`/`Form2` chiamano `toast()` (`hooks/use-toast.ts`) ma nessun componente `Toaster` è montato, quindi l'utente non vede né gli errori (reCAPTCHA mancante, rate limit, errori server) né le conferme. Serve un `Toaster` nel layout.
+1. **Rate limit condiviso con Upstash**: in produzione mancano `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`, quindi il limite per IP dei form vive nella memoria della singola istanza serverless e protegge poco (form-1 invia email: rischio relay di spam). Creare un database Redis su console.upstash.com in regione UE (eu-central-1), aggiungere le due variabili su Vercel (Production). Se si usa l'integrazione Marketplace di Vercel, controllare i nomi delle variabili (potrebbero essere `KV_REST_API_*`) e adattare `lib/rate-limit.ts`. Upstash è già elencato tra i fornitori in `lib/legal.ts`.
 
 ## Versioni e rilascio
 

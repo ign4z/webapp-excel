@@ -5,7 +5,7 @@ import { getValuationConfig, getCoefficienti } from '@/lib/config';
 import { getPriceForStreet } from '@/lib/streets';
 import { isAllowedCity } from '@/lib/cities';
 import { form1Schema, form2Schema } from '@/lib/schema';
-import { verifyRecaptcha } from '@/lib/recaptcha';
+import { verifyCaptcha } from '@/lib/captcha';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { verifySessionToken } from '@/lib/session-token';
 import { computeValuation } from '@/lib/valuation';
@@ -21,7 +21,7 @@ const log = createLogger('api/form-2');
 const requestSchema = form2Schema.extend({
   sessionToken: z.string().max(1000),
   form1Data: form1Schema,
-  recaptchaToken: z.string(),
+  captchaToken: z.string().max(2048),
 });
 
 export async function POST(req: NextRequest) {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { sessionToken, form1Data, recaptchaToken, ...form2Data } = requestSchema.parse(body);
+    const { sessionToken, form1Data, captchaToken, ...form2Data } = requestSchema.parse(body);
 
     log.info('Form2 POST received', { city: form1Data.city, sqm: form1Data.squareMeters });
 
@@ -46,9 +46,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Sessione non valida o scaduta. Ricompila il primo step.' }, { status: 400 });
     }
 
-    if (!(await verifyRecaptcha(recaptchaToken))) {
-      log.warn('Form2 reCAPTCHA failed');
-      return NextResponse.json({ error: 'Verifica reCAPTCHA fallita' }, { status: 400 });
+    if (!(await verifyCaptcha(captchaToken))) {
+      log.warn('Form2 captcha failed');
+      return NextResponse.json({ error: 'Verifica anti-bot fallita' }, { status: 400 });
     }
 
     if (!isAllowedCity(form1Data.city)) {
@@ -77,16 +77,16 @@ export async function POST(req: NextRequest) {
     log.info('Excel saved to blob', { filename });
 
     /* ─── Email dopo la risposta (after() mantiene viva la funzione serverless fino al completamento) ─── */
-    const attachment = { filename: 'valutazione-immobile.xlsx', content: excel };
+    // Report solo su Blob (pannello admin): niente allegati nelle email
     after(async () => {
       await Promise.all([
-        sendForm2Email({ ...form1Data, finalValue: valuation.finalValue, attachment }),
-        sendAdminNotification({ ...form1Data, finalValue: valuation.finalValue, attachment }),
+        sendForm2Email({ ...form1Data, finalValue: valuation.finalValue }),
+        sendAdminNotification({ ...form1Data, finalValue: valuation.finalValue }),
       ]);
     });
 
-    const { baseValue, finalValue, coeffTotale, totalAdjustment, details } = valuation;
-    return NextResponse.json({ finalValuation: { baseValue, finalValue, coeffTotale, totalAdjustment, details } });
+    // Al cliente solo il valore finale: base e coefficienti restano nel report admin
+    return NextResponse.json({ finalValuation: { finalValue: valuation.finalValue } });
 
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {

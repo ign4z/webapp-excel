@@ -6,15 +6,16 @@ import { useForm, useWatch, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { form1Schema } from '@/lib/schema';
 import { composeAddress, splitAddress, findExactStreet, CIVIC_PATTERN, type StreetOption } from '@/lib/street-search';
-import { toast } from '@/hooks/use-toast';
 import { Step1View, Step1FormValues, type AddressFieldProps } from '@/components/valuation/Step1View';
+import { submitErrorMessage } from '@/components/valuation/shared';
 
 
 export default function Form1() {
   const router = useRouter();
 
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Indirizzo: via scelta dall'elenco del comune + civico separato; il campo `address` del form
   // ("Via, civico") è derivato da questi e resta il formato letto dal lookup prezzi lato server
@@ -165,17 +166,19 @@ export default function Form1() {
   async function onSubmit(values: Step1FormValues) {
     if (!checkAddress()) return;
 
-    if (!recaptchaToken) {
-      toast({ title: 'Errore', description: 'Completa la verifica reCAPTCHA', variant: 'destructive' });
+    // Senza site key (sviluppo) il widget non c'è: decide il server, che in produzione rifiuta
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      setSubmitError('Completa la verifica anti-bot qui sopra.');
       return;
     }
 
+    setSubmitError(null);
     setIsLoading(true);
     try {
       const response = await fetch('/api/form-1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, recaptchaToken }),
+        body: JSON.stringify({ ...values, captchaToken: captchaToken ?? '' }),
       });
 
       const data = await response.json();
@@ -186,12 +189,10 @@ export default function Form1() {
       sessionStorage.setItem('calculationResult', JSON.stringify(data.result));
       sessionStorage.setItem('sessionToken', data.sessionToken);
 
-      toast({ title: 'Valutazione calcolata', description: 'Ti abbiamo inviato una email con i dettagli.' });
       // isLoading resta attivo fino al cambio pagina: niente secondo invio nel frattempo
       router.push('/step-2');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Errore sconosciuto';
-      toast({ title: 'Errore', description: message, variant: 'destructive' });
+      setSubmitError(submitErrorMessage(error));
       setIsLoading(false);
     }
   }
@@ -216,7 +217,8 @@ export default function Form1() {
       }}
       isLoading={isLoading}
       onSubmit={form.handleSubmit(onSubmit, onInvalid)}
-      onRecaptchaChange={setRecaptchaToken}
+      onCaptchaChange={setCaptchaToken}
+      submitError={submitError}
     />
   );
 }

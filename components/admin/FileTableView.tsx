@@ -3,6 +3,7 @@
 import { Download, FileSpreadsheet, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatusMessage } from './StatusMessage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export interface ExcelFile {
@@ -15,6 +16,8 @@ export interface ExcelFile {
 interface FileTableViewProps {
   files: ExcelFile[];
   loading: boolean;
+  /** Esito dell'ultima operazione (prefissi ✅ ❌, vedi StatusMessage) */
+  message: string;
   deletingUrl: string | null;
   onDelete: (file: ExcelFile) => void;
   onDownload: (file: ExcelFile) => void;
@@ -42,7 +45,7 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function FileTableView({ files, loading, deletingUrl, onDelete, onDownload, onRefresh }: FileTableViewProps) {
+export function FileTableView({ files, loading, message, deletingUrl, onDelete, onDownload, onRefresh }: FileTableViewProps) {
   return (
     <Card>
       <CardHeader>
@@ -57,6 +60,7 @@ export function FileTableView({ files, loading, deletingUrl, onDelete, onDownloa
       </CardHeader>
 
       <CardContent>
+        <StatusMessage message={message} className="mb-4" />
         {loading ? (
           <div className="flex justify-center py-12 text-muted-foreground">
             <Loader2 className="size-6 animate-spin" />

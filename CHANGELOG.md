@@ -3,6 +3,32 @@
 Tutte le modifiche rilevanti del progetto sono documentate in questo file.
 Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni secondo [Semantic Versioning](https://semver.org/lang/it/).
 
+## [Unreleased]
+
+### Aggiunto
+- Informativa privacy (`/privacy`) e cookie policy (`/cookie`), con dati del titolare, conservazione e fornitori centralizzati in `lib/legal.ts`.
+- Footer con ragione sociale, P.IVA e link a privacy e cookie su tutte le pagine pubbliche; avviso sul ricontatto e link all'informativa accanto ai pulsanti di invio.
+- Cancellazione automatica dei report Excel più vecchi di 24 mesi: Cron Vercel giornaliero `/api/cron/purge-reports` protetto da `CRON_SECRET`.
+- Link all'informativa privacy in fondo alle email al cliente.
+- Pagina admin **Impostazioni** (`/admin/settings`): destinatari della notifica di nuova valutazione (fino a 5), salvati su Blob; `ADMIN_EMAIL` resta come riserva.
+- Header di sicurezza su tutte le pagine (`next.config.ts`): Content-Security-Policy (solo il sito e Cloudflare Turnstile; in admin anche Google Maps), HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
+
+### Modificato
+- Verifica anti-bot passata da Google reCAPTCHA a Cloudflare Turnstile (`lib/captcha.ts`, variabili `NEXT_PUBLIC_TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET_KEY`): nessun cookie di terze parti, quindi nessun banner cookie.
+- Font dei form serviti dal sito con `next/font` invece che da Google Fonts a ogni visita.
+- Il report Excel non viene più allegato alle email (né al cliente né all'admin): resta solo nel pannello admin, così viene cancellato insieme agli altri dati alla scadenza della conservazione.
+- La schermata finale dello Step 2 e la risposta di `/api/form-2` mostrano solo il valore stimato: valore base e coefficienti restano nel report admin.
+- Il prezzo €/mq della via non viene più restituito da `/api/form-1` né mostrato nell'email preliminare: solo la stima.
+
+### Corretto
+- Gli errori di invio dei form (rate limit, verifica anti-bot, sessione scaduta, errori server) ora compaiono sopra il pulsante: prima passavano da toast mai mostrati e l'utente non vedeva nulla. Lo stesso per gli errori del pannello Report admin, ora con `StatusMessage`.
+- Oggetto della notifica admin: nome, cognome e comune ripuliti da a-capo e caratteri di controllo.
+
+### Rimosso
+- Indirizzo email del cliente dai log di invio.
+- Route pubblica `GET /api/config`, non usata dall'app, che esponeva prezzi e coefficienti a chiunque.
+- Google reCAPTCHA (`react-google-recaptcha`) e il sistema di toast inutilizzato (`hooks/use-toast.ts`).
+
 ## [0.9.2] — 2026-09-27
 
 ### Aggiunto
